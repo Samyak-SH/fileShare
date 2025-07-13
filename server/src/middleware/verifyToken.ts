@@ -21,10 +21,19 @@ import jwt from "jsonwebtoken";
 //   }
 // };
 
+export function clearToken(req:Request, res:Response){
+    res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,         // true in production
+    sameSite: "lax",       // must match how you originally set it
+  });
+
+  return res.status(200).send("Logged out successfully");
+}
+
 
 export function verifyLoginToken(req:Request,res:Response){
     const token = req.cookies.token;
-    console.log(token);
 
   if (!token) {
     return res.status(401).send("Not logged in");

@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import {userLogin, userSignUp} from "./controller/userController"
-import {verifyLoginToken} from "./middleware/verifyToken"
+import {verifyLoginToken, clearToken} from "./middleware/verifyToken"
 import cookieParser from "cookie-parser";
 
 const app = express();
@@ -23,6 +23,7 @@ app.get("/ping",(req,res)=>{res.send("Pong")});
 app.post("/signup",userSignUp)
 app.post("/login",userLogin)
 app.post("/verify", verifyLoginToken)
+app.post("/logout", clearToken);
 
 
 app.listen(3000, ()=>{

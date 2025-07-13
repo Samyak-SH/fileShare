@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import axios from "axios"
+import { Toast } from "@/components/ui/toast";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -22,6 +23,7 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "info" | "error" | "success" } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,37 +53,40 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
     setIsSubmitting(true);
     try {
-          await axios.post(`${SERVER_URL}/signup`, {
-            name:formData.name,
-            email: formData.email,
-            password: formData.password,
-            confirmPassword: formData.confirmPassword
-          });
-          // Success feedback
-          alert('Signup success, Please login!');
-          navigate("/login");
-          // Optionally handle response, e.g. navigate or store token
-        } catch (error:any) {
-          if(error.status===409){
-            alert("user already exists");
-          }else{
-            alert("failed to create user");
-          }
-        } finally {
-          setIsSubmitting(false);
-        }
+      await axios.post(`${SERVER_URL}/signup`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
+      });
+      setToast({ message: 'Signup success, Please login!', type: 'success' });
+      setTimeout(() => navigate("/login"), 1200);
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        setToast({ message: "User already exists", type: "error" });
+      } else {
+        setToast({ message: "Failed to create user", type: "error" });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Card className="w-full max-w-md bg-white border-black">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-black">Create Account</CardTitle>

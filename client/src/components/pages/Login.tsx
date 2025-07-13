@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import {verifyToken} from "../../verify"
 import axios from "axios"
+import { Toast } from "@/components/ui/toast";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -22,6 +23,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "info" | "error" | "success" } | null>(null);
+
   useEffect(() => {
     const checkToken = async () => {
       if (await verifyToken()) {
@@ -54,12 +57,10 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
     setIsSubmitting(true);
     try {
       await axios.post(`${SERVER_URL}/login`, {
@@ -69,24 +70,30 @@ export default function Login() {
         withCredentials: true,
       });
 
-      alert('Login successful!');
-      // navigate("/home");
+      setToast({ message: 'Login successful!', type: 'success' });
+      setTimeout(() => navigate("/home"), 1200);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        alert("User not found, Please sign up");
+        setToast({ message: "User not found, Please sign up", type: "error" });
       } else if (error.response?.status === 401) {
-        alert("Invalid Credentials");
+        setToast({ message: "Invalid Credentials", type: "error" });
       } else {
-        alert("Login failed");
+        setToast({ message: "Login failed", type: "error" });
       }
     } finally {
       setIsSubmitting(false);
     }
-
 };
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Card className="w-full max-w-md bg-white border-black">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-black">Welcome Back</CardTitle>

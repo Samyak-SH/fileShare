@@ -21,6 +21,7 @@ app.get("/ping", (req, res) => { res.send("Pong"); });
 app.post("/signup", userController_1.userSignUp);
 app.post("/login", userController_1.userLogin);
 app.post("/verify", verifyToken_1.verifyLoginToken);
+app.post("/logout", verifyToken_1.clearToken);
 app.listen(3000, () => {
     console.log("server started on http://localhost:3000");
 });
