@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import {verifyToken} from "../../verify"
+import axios from "axios"
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export default function Login() {
+
+  
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -16,6 +22,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    const checkToken = async () => {
+      if (await verifyToken()) {
+        navigate("/home");
+      }
+    };
+    checkToken();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,13 +61,29 @@ export default function Login() {
     }
     
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    
-    // Success feedback
-    alert('Login successful!');
-  };
+    try {
+      await axios.post(`${SERVER_URL}/login`, {
+        email: formData.email,
+        password: formData.password,
+      }, {
+        withCredentials: true,
+      });
+
+      alert('Login successful!');
+      // navigate("/home");
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        alert("User not found, Please sign up");
+      } else if (error.response?.status === 401) {
+        alert("Invalid Credentials");
+      } else {
+        alert("Login failed");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+
+};
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">

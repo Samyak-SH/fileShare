@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
+import axios from "axios"
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -55,12 +58,26 @@ export default function SignUp() {
     }
     
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    
-    // Success feedback
-    alert('Account created successfully!');
+    try {
+          await axios.post(`${SERVER_URL}/signup`, {
+            name:formData.name,
+            email: formData.email,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword
+          });
+          // Success feedback
+          alert('Signup success, Please login!');
+          navigate("/login");
+          // Optionally handle response, e.g. navigate or store token
+        } catch (error:any) {
+          if(error.status===409){
+            alert("user already exists");
+          }else{
+            alert("failed to create user");
+          }
+        } finally {
+          setIsSubmitting(false);
+        }
   };
 
   return (
