@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from "express"
-const SECRET_KEY = "MYKEY123"
+import { JWT_SECRET_KEY } from "../config";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { AuthorizedRequeset } from "../types/user";
 
@@ -11,7 +11,7 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): Re
   }
 
   try {
-    const decoded: String | JwtPayload = jwt.verify(token, SECRET_KEY);
+    const decoded: String | JwtPayload = jwt.verify(token, JWT_SECRET_KEY);
     // Attach the decoded payload (user info) to request
     if(typeof decoded !== "string"){
       (req as AuthorizedRequeset).user = {
@@ -47,7 +47,7 @@ export function verifyLoginToken(req:Request,res:Response):Response|undefined{
   }
 
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    const decoded = jwt.verify(token, JWT_SECRET_KEY);
     res.status(200).json(decoded); // can include user ID/email
   } catch (err) {
     return res.status(403).send("Invalid or expired token");

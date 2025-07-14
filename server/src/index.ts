@@ -1,11 +1,12 @@
-import express from "express"
+require("dotenv").config({path:"./.env"});
+import express, {Application, Request, Response} from "express"
 import cors from "cors"
 import {userLogin, userSignUp} from "./controller/userController"
 import {verifyLoginToken, clearToken} from "./middleware/verification"
 import cookieParser from "cookie-parser"
 import userRouter from "./router/userRouter"
 
-const app = express();
+const app:Application = express();
 
 
 //middleware
@@ -18,7 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 
 
-app.get("/ping",(req,res)=>{res.send("Pong")});
+app.get("/ping",(req:Request,res:Response)=>{res.send("Pong")});
 
 
 app.post("/signup",userSignUp);

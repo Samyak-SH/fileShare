@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from "express"
 import {verifyToken} from "../middleware/verification"
 import { AuthorizedRequeset } from "../types/user";
-import { uploadFile } from "../controller/userController";
+import { uploadFile } from "../controller/fileController";
 
 const userRouter:Router = express.Router();
 
@@ -12,7 +12,7 @@ function requestWrapper(req:Request, res:Response, cb:any){
 }
 
 //only hits after passing the middleware
-userRouter.get("/uploadFile",(req:Request, res:Response)=>{
+userRouter.post("/uploadFile",(req:Request, res:Response)=>{
     requestWrapper(req,res, uploadFile);
 })
 
