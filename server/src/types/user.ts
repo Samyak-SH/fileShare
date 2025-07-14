@@ -1,3 +1,5 @@
+import { Request } from "express"
+
 export interface userSignup{
     name:string, 
     email:string,
@@ -10,9 +12,19 @@ export interface userLogin{
     password:string
 }
 
+export interface userPayload{
+    id : string,
+    name : string,
+    email : string,
+}
+
 export interface user{
     id : string,
     name : string,
     email : string,
     password : string
+}
+
+export interface AuthorizedRequeset extends Request{
+    user:userPayload
 }

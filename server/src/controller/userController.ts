@@ -1,5 +1,5 @@
-import { Response,Request } from "express";
-import {userSignup, userLogin, user} from "../types/user"
+import { Response,Request, response } from "express";
+import {userSignup, userLogin, user, AuthorizedRequeset} from "../types/user"
 import {createUser, findUserViaEmail} from "../model/userModel"
 import jwt from "jsonwebtoken"
 
@@ -32,7 +32,6 @@ export async function userLogin(req:Request,res:Response){
                     sameSite: "strict",
                     maxAge : 24 * 60 * 60 * EXPIRY_TIME * 1000 // <EXPIRY_TIME> days eg if EXPIRY_TIME = 5 then 5 days
                 })
-                console.log("token : ", token);
                 return res.status(200).send("Login success");
             }else{
                 return res.status(401).send("Ivalid credentials");
@@ -62,4 +61,9 @@ export async function userSignUp(req:Request,res:Response){
         }
         return res.status(500).send("failed to create user");
     } 
+}
+
+export async function uploadFile(req:AuthorizedRequeset, res:Response){
+    console.log("uploaded user",req.user);
+    res.send("uploading file");
 }

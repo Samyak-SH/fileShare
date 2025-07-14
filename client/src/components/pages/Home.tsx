@@ -47,11 +47,9 @@ const Home = () => {
             formData.append('file', file);
 
             // In a real implementation, you'd send this to your backend
-            // const response = await fetch('/api/upload', {
-            //   method: 'POST',
-            //   body: formData,
-            //   credentials: 'include' // Include cookies
-            // });
+            await axios.get(`${SERVER_URL}/api/uploadFile`,{
+                withCredentials : true
+            })
 
             // Simulate upload delay
             await new Promise(resolve => setTimeout(resolve, 1500));
