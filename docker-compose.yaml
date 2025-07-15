@@ -1,5 +1,6 @@
 services:
-  frontend:
+  client:
+    container_name: fs-client
     build : ./client
     image : fileshare-client
     ports:
@@ -8,8 +9,11 @@ services:
       - ./client/.env
     networks:
       - fileshare-network
+    depends_on:
+      - server
   
-  backend:
+  server:
+    container_name: fs-server
     build : ./server
     image : fileshare-server
     ports:
@@ -18,8 +22,11 @@ services:
       - ./server/.env
     networks:
       - fileshare-network
+    depends_on:
+      - postgres
     
   postgres:
+    container_name: fs-database
     image : postgres
     ports:
       - "5432:5432"
@@ -29,12 +36,12 @@ services:
     networks:
       - fileshare-network
     volumes:
-      - "pgdata"
+      - "pgdata:/var/lib/postgresql/data"
   
-  networks:
-   fileshare-network:
-   driver: bridge
-  
-  volumes:
-    pgdata:
+networks:
+  fileshare-network:
+    driver: bridge
+
+volumes:
+  pgdata:
     
