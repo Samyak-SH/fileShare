@@ -24,6 +24,7 @@ export async function userLogin(req:Request,res:Response){
                 const token:string = jwt.sign(payload, JWT_SECRET_KEY, {
                     expiresIn : `${JWT_EXPIRY_TIME}d`
                 });
+                console.log("token generated ", token, "\nfor payload", payload);
                 res.cookie("token", token, {
                     httpOnly: true,
                     secure: true,

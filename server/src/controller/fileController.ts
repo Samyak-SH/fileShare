@@ -1,7 +1,7 @@
 import { Response} from "express";
 import {AuthorizedRequeset} from "../types/user"
-import { uploadedFile } from "../types/file";
-import { createFile } from "../model/fileModel";
+import { uploadedFile, file, updatedFile } from "../types/file";
+import { createFile, getUserFiles, updateFile } from "../model/fileModel";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -14,6 +14,39 @@ const s3Client = new S3Client({
         secretAccessKey : S3_SECRET_ACCESS_KEY as string 
     }
 })
+
+export async function getAllFiles(req:AuthorizedRequeset, res:Response){
+    console.log("getting all file for ", req.user.id);
+    try{
+        const result:file[] = await getUserFiles(req.user.id)
+        if(result.length!==0){
+            console.log("result ", result);
+            return res.status(200).json({files : result});
+        }
+        console.log("no files found");
+        return res.status(404).json({message : "no files found"})
+
+    }catch(err){
+        console.log("Error getting all files of user", err);
+        return res.status(500).json({message:"Failed getting all files"})
+    }
+}
+
+export async function updateFileDetails(req:AuthorizedRequeset, res:Response){
+    try{
+        const upf:updatedFile = {
+            fid: req.body.fid,
+            updatedName : req.body.name,
+            updatedPath : req.body.path,
+        }
+        console.log("filed that came for udpate, ", upf);
+        await updateFile(upf);
+        return res.status(200).send({message : "sucess"});
+    }catch(err){
+        console.log("Failed to update file details ", err);
+        return res.status(500).json({message : "Failed to update file details"});;
+    }
+}
 
 export async function uploadFile(req:AuthorizedRequeset, res:Response){
     try{

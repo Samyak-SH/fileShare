@@ -36,6 +36,8 @@ interface FileListProps {
   onNavigateUp: () => void
   onBreadcrumbClick: (index: number) => void
   isLoading: boolean
+  onDropFileToFolder?: (fileId: string, targetFolderPath: string) => void
+  onRenameFile?: (fileId: string, newName: string) => void
 }
 
 const getFileIcon = (type: string, isFolder: boolean) => {
@@ -75,19 +77,17 @@ export function FileList({
   onNavigateUp,
   onBreadcrumbClick,
   isLoading,
+  onDropFileToFolder,
+  onRenameFile,
 }: FileListProps) {
-  // Create breadcrumb items
   const getBreadcrumbs = () => {
     if (currentPath === "/") return [{ name: "Root", path: "/" }]
-
     const parts = currentPath.split("/").filter(Boolean)
     const breadcrumbs = [{ name: "Root", path: "/" }]
-
     parts.forEach((part, index) => {
       const path = `/${parts.slice(0, index + 1).join("/")}/`
       breadcrumbs.push({ name: part, path })
     })
-
     return breadcrumbs
   }
 
@@ -105,7 +105,6 @@ export function FileList({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header with breadcrumbs */}
       <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wide">Files ({files.length})</h2>
@@ -120,7 +119,6 @@ export function FileList({
           </Button>
         </div>
 
-        {/* Breadcrumb Navigation */}
         <div className="flex items-center space-x-1 text-xs text-gray-400 overflow-x-auto">
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.path} className="flex items-center space-x-1 flex-shrink-0">
@@ -138,7 +136,6 @@ export function FileList({
           ))}
         </div>
 
-        {/* Up Navigation Button */}
         {currentPath !== "/" && (
           <Button
             onClick={onNavigateUp}
@@ -152,7 +149,6 @@ export function FileList({
         )}
       </div>
 
-      {/* File List */}
       <div className="flex-1 overflow-y-auto">
         {files.length === 0 ? (
           <div className="p-4">
@@ -164,7 +160,6 @@ export function FileList({
           </div>
         ) : (
           <div className="p-2">
-            {/* Sort folders first, then files */}
             {[...files]
               .sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1
@@ -178,12 +173,23 @@ export function FileList({
                 return (
                   <div
                     key={file.id}
+                    draggable={!file.isFolder}
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", file.id)}
+                    onDragOver={(e) => {
+                      if (file.isFolder) e.preventDefault()
+                    }}
+                    onDrop={(e) => {
+                      if (file.isFolder) {
+                        const draggedFileId = e.dataTransfer.getData("text/plain")
+                        onDropFileToFolder?.(draggedFileId, file.path.endsWith("/") ? file.path : file.path + "/")
+                      }
+                    }}
                     onClick={() => onFileSelect(file)}
                     className={cn(
                       "flex items-center space-x-3 p-3 rounded-md cursor-pointer transition-colors",
                       "hover:bg-gray-900",
                       isSelected && "bg-gray-800 border border-gray-700",
-                      file.isFolder && "hover:bg-gray-800",
+                      file.isFolder && "hover:bg-gray-800"
                     )}
                   >
                     <IconComponent
@@ -191,10 +197,29 @@ export function FileList({
                     />
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white truncate" title={file.name}>
+                      <div
+                        contentEditable={!file.isFolder}
+                        suppressContentEditableWarning
+                        onDoubleClick={(e) => e.currentTarget.focus()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            (e.currentTarget as HTMLElement).blur();
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const newName = e.currentTarget.textContent?.trim();
+                          if (newName && newName !== file.name) {
+                            onRenameFile?.(file.id, newName);
+                          }
+                        }}
+                        className="text-sm font-medium text-white truncate cursor-text"
+                      >
                         {file.name}
                         {file.isFolder && <span className="text-gray-500 ml-1">/</span>}
                       </div>
+
+
                       <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
                         {!file.isFolder && (
                           <>

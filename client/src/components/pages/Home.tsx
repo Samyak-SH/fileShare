@@ -34,6 +34,7 @@ const mapToastType = (type: "info" | "error" | "success"): "default" | "destruct
 export default function Home() {
   const navigate = useNavigate();
   const [files, setFiles] = useState<FileItem[]>([])
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [currentPath, setCurrentPath] = useState("/")
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -51,40 +52,115 @@ export default function Home() {
   const MAX_SIDEBAR_WIDTH = 600
 
   const getCurrentPathFiles = () => {
+    if (searchQuery.trim()) {
+      return files.filter((file) => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
     return files.filter((file) => {
-      const filePath = file.path.substring(0, file.path.lastIndexOf("/") + 1)
-      return filePath === currentPath
-    })
+      const filePath = file.path.substring(0, file.path.lastIndexOf("/") + 1);
+      return filePath === currentPath;
+    });
   }
+
 
   useEffect(() => {
     const checkToken = async () => {
-      if (!(await verifyToken())) {
-        navigate("/login")
-      }
-    };
+      if (!(await verifyToken())) navigate("/login")
+    }
     checkToken();
+
     const loadFiles = async () => {
       try {
-        const mockFiles: FileItem[] = [
-          { id: "1", name: "Documents", size: 0, type: "folder", uploadedAt: "2024-01-15T10:30:00Z", path: "/Documents", isFolder: true },
-          { id: "2", name: "Images", size: 0, type: "folder", uploadedAt: "2024-01-14T15:45:00Z", path: "/Images", isFolder: true },
-          { id: "3", name: "document.pdf", size: 2048576, type: "application/pdf", uploadedAt: "2024-01-15T10:30:00Z", path: "/Documents/document.pdf", isFolder: false },
-          { id: "4", name: "image.jpg", size: 1024000, type: "image/jpeg", uploadedAt: "2024-01-14T15:45:00Z", path: "/Images/image.jpg", isFolder: false },
-          { id: "5", name: "spreadsheet.xlsx", size: 512000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2024-01-13T09:20:00Z", path: "/spreadsheet.xlsx", isFolder: false },
-          { id: "6", name: "Subfolder", size: 0, type: "folder", uploadedAt: "2024-01-12T08:15:00Z", path: "/Documents/Subfolder", isFolder: true },
-          { id: "7", name: "nested-file.txt", size: 1024, type: "text/plain", uploadedAt: "2024-01-12T08:20:00Z", path: "/Documents/Subfolder/nested-file.txt", isFolder: false },
-        ]
-        setFiles(mockFiles)
+        const response = await fetch(`${SERVER_URL}/api/getAllFiles`, {
+          credentials: 'include',
+        });
+        const res = await response.json();
+        if (!res.files) return;
+        const rawFiles = res.files as any[];
+
+        const flatFiles: FileItem[] = rawFiles.map((f) => {
+          const strippedName = f.name.includes("-") ? f.name.substring(0, f.name.lastIndexOf("-")) : f.name;
+          return {
+            id: f.fid,
+            name: strippedName,
+            size: parseInt(f.size),
+            type: f.type,
+            path: f.path,
+            uploadedAt: f.uploadedAt || "",
+            isFolder: false,
+          };
+        });
+
+        const folderPaths = new Set<string>();
+        flatFiles.forEach(file => {
+          const parts = file.path.split('/').filter(Boolean);
+          for (let i = 1; i < parts.length; i++) {
+            const folderPath = '/' + parts.slice(0, i).join('/');
+            folderPaths.add(folderPath);
+          }
+        });
+
+        const folderFiles: FileItem[] = Array.from(folderPaths).map((path) => {
+          const name = path.split('/').filter(Boolean).pop() || '';
+          return {
+            id: `folder-${path}`,
+            name,
+            size: 0,
+            type: 'folder',
+            path,
+            uploadedAt: "",
+            isFolder: true,
+          };
+        });
+
+        const allFiles = [...folderFiles, ...flatFiles];
+        setFiles(allFiles);
       } catch (error) {
-        setToast({ message: "Error loading files", type: "error" })
+        setToast({ message: "Error loading files", type: "error" });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
-
     loadFiles()
   }, [])
+
+  const handleDropFileToFolder = async (fileId: string, targetFolderPath: string) => {
+    const file = files.find(f => f.id === fileId && !f.isFolder);
+    if (!file) return;
+    const newPath = `${targetFolderPath}${file.name}`;
+    console.log(file);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/updateFile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ fid: file.id, name: file.name, path: newPath })
+      });
+      if (!res.ok) throw new Error("Failed to move file");
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, path: newPath } : f));
+      setToast({ message: `Moved "${file.name}"`, type: "success" });
+    } catch {
+      setToast({ message: "Failed to move file", type: "error" });
+    }
+  }
+
+  const handleRenameFile = async (fileId: string, newName: string) => {
+    const file = files.find(f => f.id === fileId);
+    if (!file) return;
+    const newPath = file.path.replace(/[^/]+$/, newName);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/updateFile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ fid: file.id, name: newName, path: newPath })
+      });
+      if (!res.ok) throw new Error("Failed to rename");
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, name: newName, path: newPath } : f));
+      setToast({ message: `Renamed to "${newName}"`, type: "success" });
+    } catch {
+      setToast({ message: "Rename failed", type: "error" });
+    }
+  }
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     setIsResizing(true)
@@ -177,7 +253,7 @@ export default function Home() {
         setToast({ message: result.message || "Upload failed", type: "error" })
         return
       }
-      
+
       const s3UploadResponse = await fetch(result.presignedURL, {
         method: "PUT",
         headers: {
@@ -324,20 +400,45 @@ export default function Home() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button onClick={() => setIsUploadModalOpen(true)} variant="outline" size="sm" className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black">
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
+          >
             <Upload className="h-4 w-4" />
             <span>Upload</span>
           </Button>
 
-          <Button onClick={handleLogout} variant="outline" size="sm" className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
+          >
             <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </Button>
         </div>
       </header>
 
-      <div ref={containerRef} className="flex h-[calc(100vh-73px)] relative">
-        <div ref={sidebarRef} className="border-r border-gray-800 bg-black flex-shrink-0" style={{ width: `${sidebarWidth}px` }}>
+      {/* ✅ Search bar */}
+      <div className="px-4 py-2 border-b border-gray-800 bg-black">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search files..."
+          className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
+        />
+      </div>
+
+      <div ref={containerRef} className="flex h-[calc(100vh-73px-50px)] relative">
+        <div
+          ref={sidebarRef}
+          className="border-r border-gray-800 bg-black flex-shrink-0"
+          style={{ width: `${sidebarWidth}px` }}
+        >
           <FileList
             files={getCurrentPathFiles()}
             selectedFile={selectedFile}
@@ -347,10 +448,15 @@ export default function Home() {
             onNavigateUp={handleNavigateUp}
             onBreadcrumbClick={handleBreadcrumbClick}
             isLoading={isLoading}
+            onDropFileToFolder={handleDropFileToFolder} // ✅ NEW
+            onRenameFile={handleRenameFile}             // ✅ NEW
           />
         </div>
 
-        <div className="w-1 bg-gray-800 hover:bg-gray-600 cursor-col-resize flex-shrink-0 transition-colors duration-200 relative group" onMouseDown={handleMouseDown}>
+        <div
+          className="w-1 bg-gray-800 hover:bg-gray-600 cursor-col-resize flex-shrink-0 transition-colors duration-200 relative group"
+          onMouseDown={handleMouseDown}
+        >
           <div className="absolute inset-y-0 left-0 w-1 bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
           <div className="absolute inset-y-0 -left-1 -right-1 w-3" />
         </div>
@@ -372,7 +478,10 @@ export default function Home() {
                 </div>
 
                 <div className="flex justify-center">
-                  <Button onClick={() => setIsGenerateUrlModalOpen(true)} className="bg-white text-black hover:bg-gray-200 font-medium px-6 py-2">
+                  <Button
+                    onClick={() => setIsGenerateUrlModalOpen(true)}
+                    className="bg-white text-black hover:bg-gray-200 font-medium px-6 py-2"
+                  >
                     Generate Sharing URL
                   </Button>
                 </div>
@@ -397,9 +506,26 @@ export default function Home() {
         </div>
       </div>
 
-      <UploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} currentPath={currentPath} />
-      <CreateFolderModal isOpen={isCreateFolderModalOpen} onClose={() => setIsCreateFolderModalOpen(false)} onCreateFolder={handleCreateFolder} currentPath={currentPath} />
-      <GenerateUrlModal isOpen={isGenerateUrlModalOpen} onClose={() => setIsGenerateUrlModalOpen(false)} onGenerateUrl={handleGenerateUrl} selectedFile={selectedFile} />
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={handleFileUpload}
+        currentPath={currentPath}
+      />
+      <CreateFolderModal
+        isOpen={isCreateFolderModalOpen}
+        onClose={() => setIsCreateFolderModalOpen(false)}
+        onCreateFolder={handleCreateFolder}
+        currentPath={currentPath}
+      />
+      <GenerateUrlModal
+        isOpen={isGenerateUrlModalOpen}
+        onClose={() => setIsGenerateUrlModalOpen(false)}
+        onGenerateUrl={handleGenerateUrl}
+        selectedFile={selectedFile}
+      />
     </div>
   )
+
 }
+
