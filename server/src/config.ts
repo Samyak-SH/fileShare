@@ -5,3 +5,4 @@ export const S3_ACCESS_KEY_ID: string = process.env.S3_ACCESS_KEY_ID as string
 export const S3_SECRET_ACCESS_KEY: string = process.env.S3_SECRET_ACCESS_KEY as string
 export const JWT_SECRET_KEY: string = process.env.JWT_SECRET_KEY as string
 export const JWT_EXPIRY_TIME: number = Number(process.env.JWT_EXPIRY_TIME)
+export const DB_HOST: string = process.env.DB_HOST as string
