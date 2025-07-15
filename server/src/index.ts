@@ -5,6 +5,7 @@ import {userLogin, userSignUp} from "./controller/userController"
 import {verifyLoginToken, clearToken} from "./middleware/verification"
 import cookieParser from "cookie-parser"
 import userRouter from "./router/userRouter"
+import { PORT } from "./config";
 
 const app:Application = express();
 
@@ -30,6 +31,6 @@ app.post("/logout", clearToken);
 app.use("/api", userRouter);
 
 
-app.listen(3000, ()=>{
-    console.log("server started on http://localhost:3000");
+app.listen(PORT, ()=>{
+    console.log(`server started on http://localhost:${PORT}`);
 })

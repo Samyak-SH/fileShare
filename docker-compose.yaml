@@ -1,0 +1,40 @@
+services:
+  frontend:
+    build : ./client
+    image : fileshare-client
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./client/.env
+    networks:
+      - fileshare-network
+  
+  backend:
+    build : ./server
+    image : fileshare-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    networks:
+      - fileshare-network
+    
+  postgres:
+    image : postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    networks:
+      - fileshare-network
+    volumes:
+      - "pgdata"
+  
+  networks:
+   fileshare-network:
+   driver: bridge
+  
+  volumes:
+    pgdata:
+    
