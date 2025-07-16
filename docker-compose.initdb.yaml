@@ -1,0 +1,16 @@
+services:
+  postgres:
+    container_name: fs-database
+    image : postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=fileshare
+    volumes:
+      - fileshare-db:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      
+volumes:
+  fileshare-db:

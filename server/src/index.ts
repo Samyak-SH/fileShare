@@ -19,15 +19,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 
-
+//testing API
 app.get("/ping",(req:Request,res:Response)=>{res.send("Pong")});
 
 
+//authentication
 app.post("/signup",userSignUp);
 app.post("/login",userLogin);
 app.post("/verify", verifyLoginToken);
 app.post("/logout", clearToken);
 
+//API
 app.use("/api", userRouter);
 
 

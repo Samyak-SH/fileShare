@@ -33,15 +33,16 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=fileshare
     networks:
       - fileshare-network
     volumes:
-      - "pgdata:/var/lib/postgresql/data"
+      - fileshare-db:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
   
 networks:
   fileshare-network:
     driver: bridge
 
 volumes:
-  pgdata:
-    
+  fileshare-db:
