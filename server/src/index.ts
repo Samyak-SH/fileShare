@@ -35,6 +35,6 @@ app.post("/logout", clearToken);
 app.use("/api", userRouter);
 
 
-app.listen(PORT, ()=>{
+app.listen(PORT, "0.0.0.0", ()=>{
     console.log(`server started on http://localhost:${PORT}`);
 })
