@@ -28,7 +28,7 @@ export async function userLogin(req:Request,res:Response){
                 res.cookie("token", token, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: "strict",
+                    sameSite: 'none',
                     maxAge : 24 * 60 * 60 * JWT_EXPIRY_TIME * 1000 // <EXPIRY_TIME> days eg if EXPIRY_TIME = 5 then 5 days
                 })
                 return res.status(200).json({message :"Login success"});
