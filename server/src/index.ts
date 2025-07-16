@@ -13,7 +13,7 @@ const app:Application = express();
 //middleware
 app.use(cookieParser());
 app.use(cors({
-  origin : "http://localhost:5173",
+  origin : true,
   credentials: true
 }));
 app.use(express.json());

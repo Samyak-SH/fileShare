@@ -15,6 +15,7 @@ export async function verifyToken(): Promise<boolean> {
     });
     return true;
   } catch (err: any) {
+    console.log(err);
     if (toastCallback) toastCallback("Session expired");
     return false;
   }
