@@ -24,7 +24,7 @@ export async function userLogin(req:Request,res:Response){
                 const token:string = jwt.sign(payload, JWT_SECRET_KEY, {
                     expiresIn : `${JWT_EXPIRY_TIME}d`
                 });
-                // console.log("token generated ", token, "\nfor payload", payload);
+                console.log("token generated ", token, "\nfor payload", payload);
                 res.cookie("token", token, {
                     httpOnly: true,
                     secure: true,
@@ -37,7 +37,7 @@ export async function userLogin(req:Request,res:Response){
             }
         }
     }catch(err:any){
-        // console.log("failed to login user", err);
+        console.log("failed to login user", err);
         return res.status(500).json({message :"failed to login user"});
     }
 }

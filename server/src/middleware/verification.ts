@@ -5,9 +5,9 @@ import { AuthorizedRequeset } from "../types/user";
 
 export function verifyToken(req: Request, res: Response, next: NextFunction): Response|undefined{
   const token = req.cookies.token;
-  // console.log("cookied", req.cookies);
+  console.log("cookied", req.cookies);
   if (!token) {
-    // console.log("no token found");
+    console.log("no token found");
     return res.status(401).send({ message: "Access denied. No token provided" });
   }
 
@@ -20,14 +20,14 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): Re
         name : (decoded as JwtPayload).name,
         email : (decoded as JwtPayload).email,
       }
-      // console.log("middleware passed")
+      console.log("middleware passed")
       next();
     }else{
-      // console.log("invalid token");
+      console.log("invalid token");
       return res.status(401).send({message : "Invalid or expired token"});
     }
   } catch (err) {
-    // console.log("error while decoding token");
+    console.log("error while decoding token");
     return res.status(401).send({ message: "Invalid or expired token" });
   }
 }
