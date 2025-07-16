@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(cors({
   origin : true,
   credentials: true,
-  exposedHeaders:["set-cookie"]
+  exposedHeaders: ['x-auth-token']
 }));
 app.set("trust proxy", true)
 app.use(express.json());

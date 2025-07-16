@@ -10,7 +10,10 @@ export function setVerifyToastCallback(cb: (msg: string) => void) {
 export async function verifyToken(): Promise<boolean> {
   console.log("verifying token");
   try {
-    await axios.post(`${SERVER_URL}/verify`, {}, {
+    const token = localStorage.getItem("x-auth-token");
+    await axios.post(`${SERVER_URL}/verify`, {
+      token : token
+    }, {
       withCredentials: true
     });
     return true;

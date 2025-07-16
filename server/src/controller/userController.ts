@@ -25,13 +25,7 @@ export async function userLogin(req:Request,res:Response){
                     expiresIn : `${JWT_EXPIRY_TIME}d`
                 });
                 console.log("token generated ", token, "\nfor payload", payload);
-                res.cookie("token", token, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'lax',
-                    maxAge : 24 * 60 * 60 * JWT_EXPIRY_TIME * 1000 // <EXPIRY_TIME> days eg if EXPIRY_TIME = 5 then 5 days
-                })
-                return res.status(200).json({message :"Login success"});
+                return res.status(200).header("x-auth-token", token).send({ message: "success" });
             }else{
                 return res.status(401).json({message :"Ivalid credentials"});
             }

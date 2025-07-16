@@ -63,15 +63,21 @@ export default function Login() {
     }
     setIsSubmitting(true);
     try {
-      await axios.post(`${SERVER_URL}/login`, {
+      const response = await axios.post(`${SERVER_URL}/login`, {
         email: formData.email,
         password: formData.password,
       }, {
         withCredentials: true,
       });
 
-      setToast({ message: 'Login successful!', type: 'success' });
-      setTimeout(() => navigate("/home"), 1200);
+      if(response.status===200){
+        const token = response.headers['x-auth-token'];
+        localStorage.setItem('x-auth-token', token);
+        setToast({ message: 'Login successful!', type: 'success' });
+        navigate("/home")
+
+      }
+
     } catch (error: any) {
       if (error.response?.status === 404) {
         setToast({ message: "User not found, Please sign up", type: "error" });

@@ -4,8 +4,8 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { AuthorizedRequeset } from "../types/user";
 
 export function verifyToken(req: Request, res: Response, next: NextFunction): Response|undefined{
-  const token = req.cookies.token;
-  console.log("cookied", req.cookies);
+  const token = req.headers.authorization?.split(" ")[1];
+  console.log("headers, ", req.headers);
   if (!token) {
     console.log("no token found");
     return res.status(401).send({ message: "Access denied. No token provided" });
@@ -44,7 +44,7 @@ export function clearToken(req:Request, res:Response):Response|undefined{
 
 
 export function verifyLoginToken(req:Request,res:Response):Response|undefined{
-    const token = req.cookies.token;
+    const {token} = req.body;
 
   if (!token) {
     return res.status(401).send("Not logged in");

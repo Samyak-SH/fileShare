@@ -70,7 +70,13 @@ export default function Home() {
 
     const loadFiles = async () => {
       try {
+        const token = localStorage.getItem("x-auth-token");
         const response = await fetch(`${SERVER_URL}/api/getAllFiles`, {
+          method : "GET",
+          headers : {
+            "Content-Type" : "application/json",
+            Authorization : `Bearer ${token}`
+          },
           credentials: 'include',
         });
         const res = await response.json();
@@ -129,12 +135,17 @@ export default function Home() {
     const newPath = `${targetFolderPath}${file.name}`;
     console.log(file);
     try {
+      const token = localStorage.getItem("x-auth-token");
       const res = await fetch(`${SERVER_URL}/api/updateFile`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         credentials: "include",
         body: JSON.stringify({ fid: file.id, name: file.name, path: newPath })
       });
+
       if (!res.ok) throw new Error("Failed to move file");
       setFiles(prev => prev.map(f => f.id === fileId ? { ...f, path: newPath } : f));
       setToast({ message: `Moved "${file.name}"`, type: "success" });
@@ -148,9 +159,12 @@ export default function Home() {
     if (!file) return;
     const newPath = file.path.replace(/[^/]+$/, newName);
     try {
+      const token = localStorage.getItem("x-auth-token");
       const res = await fetch(`${SERVER_URL}/api/updateFile`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          Authorization : `Bearer ${token}`
+        },
         credentials: "include",
         body: JSON.stringify({ fid: file.id, name: newName, path: newPath })
       });
@@ -199,21 +213,23 @@ export default function Home() {
   }, [isResizing, handleMouseMove, handleMouseUp])
 
   const handleLogout = async () => {
-    try {
-      const res = await fetch(`${SERVER_URL}/logout`, {
-        method: "POST",
-        credentials: "include",
-      })
+    localStorage.removeItem("x-auth-token");
+    navigate("/login");
+    // try {
+    //   const res = await fetch(`${SERVER_URL}/logout`, {
+    //     method: "POST",
+    //     credentials: "include",
+    //   })
 
-      if (res.ok) {
-        navigate("/login")
-        setToast({ message: "Logged out successfully", type: "success" })
-      } else {
-        setToast({ message: "Logout failed", type: "error" })
-      }
-    } catch (error) {
-      setToast({ message: "Something went wrong during logout", type: "error" })
-    }
+    //   if (res.ok) {
+    //     navigate("/login")
+    //     setToast({ message: "Logged out successfully", type: "success" })
+    //   } else {
+    //     setToast({ message: "Logout failed", type: "error" })
+    //   }
+    // } catch (error) {
+    //   setToast({ message: "Something went wrong during logout", type: "error" })
+    // }
   }
 
 
@@ -236,11 +252,12 @@ export default function Home() {
       formData.append("metadata", JSON.stringify(metadata))
       formData.append("path", fullPath)
       // console.log(metadata);
-
+      const token = localStorage.getItem("x-auth-token");
       const response = await fetch(`${SERVER_URL}/api/uploadFile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization : `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify(metadata),
