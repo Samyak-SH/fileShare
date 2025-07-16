@@ -14,8 +14,10 @@ const app:Application = express();
 app.use(cookieParser());
 app.use(cors({
   origin : true,
-  credentials: true
+  credentials: true,
+  exposedHeaders:["set-cookie"]
 }));
+app.set("trust proxy", true)
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 
