@@ -16,7 +16,6 @@ CREATE TABLE files (
     uid UUID NOT NULL,
     type VARCHAR(100) NOT NULL,
     size TEXT NOT NULL,
-    s3_key TEXT NOT NULL,
     path TEXT NOT NULL DEFAULT '/',
     CONSTRAINT files_uid_fkey FOREIGN KEY (uid) REFERENCES users(id) ON DELETE CASCADE
 );
