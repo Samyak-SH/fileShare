@@ -12,7 +12,7 @@ export async function userLogin(req:Request,res:Response){
     try{
         const fetchedUser: user|undefined = await findUserViaEmail(u.email);
         if(!fetchedUser){
-            return res.status(404).json({message :"user not found"});
+            return res.status(200).json({message :"user not found"});
         }else{
             if(u.password===fetchedUser.password){
                 const payload: any = {

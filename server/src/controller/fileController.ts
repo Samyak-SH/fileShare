@@ -24,7 +24,7 @@ export async function getAllFiles(req:AuthorizedRequeset, res:Response){
             return res.status(200).json({files : result});
         }
         console.log("no files found");
-        return res.status(404).json({message : "no files found"})
+        return res.status(200).json({message : "no files found"})
 
     }catch(err){
         console.log("Error getting all files of user", err);
