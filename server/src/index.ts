@@ -5,12 +5,17 @@ import {userLogin, userSignUp} from "./controller/userController"
 import {verifyLoginToken, clearToken} from "./middleware/verification"
 import cookieParser from "cookie-parser"
 import userRouter from "./router/userRouter"
-import { PORT } from "./config";
+import { PORT, REDIS_HOST, REDIS_PORT } from "./config";
 import { createClient } from "redis";
 import { RedisClientType } from "@redis/client";
 
 const app:Application = express();
-const redisClient:RedisClientType = createClient();
+const redisClient:RedisClientType = createClient({
+  socket: {
+    host : REDIS_HOST,
+    port : REDIS_PORT
+  }
+});
 
 
 //middleware

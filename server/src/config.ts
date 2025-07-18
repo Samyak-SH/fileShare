@@ -19,6 +19,8 @@ export const DB_PORT: string = process.env.DB_PORT as string
 //redis config
 export const RATE_LIMIT: number = Number(process.env.RATE_LIMIT)
 export const RATE_LIMIT_WINDOW_IN_SECONDS: number = Number(process.env.RATE_LIMIT_WINDOW_IN_SECONDS)
+export const REDIS_HOST: string = process.env.REDIS_HOST as string
+export const REDIS_PORT: number = Number(process.env.REDIS_PORT);
 
 //server config
 export const PORT: number = Number(process.env.PORT)
