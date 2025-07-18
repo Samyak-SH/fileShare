@@ -2,8 +2,10 @@ import { QueryResult } from "pg";
 import { uploadedFile, file, updatedFile } from "../types/file";
 import pool from "./pool";
 
-export async function createFile(uf:uploadedFile, userId:string){
-    await pool.query(`INSERT INTO files (name, uid, type, size, s3_key, path) values ($1, $2, $3, $4, $5, $6)`, [uf.name, userId, uf.type, uf.size, uf.s3_key, uf.path]);
+export async function createFile(uf:uploadedFile, userId:string) : Promise<string>{
+    const result:QueryResult<file> = await pool.query<file>(`INSERT INTO files (name, uid, type, size, path) values ($1, $2, $3, $4, $5) RETURNING *`, [uf.name, userId, uf.type, uf.size, uf.path]);
+    const fid = result.rows[0].fid
+    return fid;
 }
 
 export async function updateFile(upf:updatedFile) {

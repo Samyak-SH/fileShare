@@ -2,12 +2,12 @@ import { Response} from "express";
 import {AuthorizedRequeset} from "../types/user"
 import { uploadedFile, file, updatedFile } from "../types/file";
 import { createFile, getUserFiles, updateFile } from "../model/fileModel";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import {S3_BUCKET_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, PRESIGNED_URL_EXPIRY_TIME, BUCKET_NAME} from "../config"
 
-const s3Client = new S3Client({
+const s3Client:S3Client = new S3Client({
     region : S3_BUCKET_REGION,
     credentials : {
         accessKeyId:S3_ACCESS_KEY_ID,
@@ -56,17 +56,32 @@ export async function uploadFile(req:AuthorizedRequeset, res:Response){
             path : req.body.path,
             type : req.body.type,
             size : `${req.body.size}`,
-            s3_key : `${req.user.id}/${req.body.customName}` //userid/customName(of file)
         }
-        await createFile(uf, req.user.id);
-        const url:string|null = await generatePutObjectURL(uf.s3_key, uf.type);
-        if(url){
-            return res.status(200).json({presignedURL : url});
+        const fid:string = await createFile(uf, req.user.id);
+        const s3_key:string = `${req.user.id}/${fid}` 
+        console.log("generated s3_key while uploading ", s3_key);
+        const presignedURL:string|null = await generatePutObjectURL(s3_key, uf.type);
+        if(presignedURL){
+            return res.status(200).json({presignedURL : presignedURL});
         }
         return res.status(500).json({message : "Failed to upload file"});
     }catch(err){
         console.error("failed to upload file", err);
-        return res.status(500).json("Failed to upload file")
+        return res.status(500).json({message:"Failed to upload file"})
+    }
+}
+
+export async function viewFile(req:AuthorizedRequeset, res:Response) {
+    try{
+        const s3_key:string = `${req.user.id}/${req.body.fid}`
+        console.log("generated s3_key for viewFile ", s3_key);
+        const presignedURL:string|null = await generateGetObjectURL(s3_key)
+
+        if(!presignedURL) return res.status(500).json({message : "error generating presigned url"});
+
+        return res.status(200).json({presignedURL : presignedURL})
+    }catch(err){
+        console.error("failed to generate viewFile url", err);
     }
 }
 
@@ -78,4 +93,13 @@ async function generatePutObjectURL(fileS3_Key:string, FileContentType:string):P
     })
     const url:string = await getSignedUrl(s3Client, command, {expiresIn : PRESIGNED_URL_EXPIRY_TIME})
     return url;
+}
+
+async function generateGetObjectURL(fileS3_key:string):Promise<string|null> {
+    const command = new GetObjectCommand({
+        Bucket : BUCKET_NAME,
+        Key : fileS3_key
+    })
+    const url:string = await getSignedUrl(s3Client, command);
+    return url
 }

@@ -16,5 +16,9 @@ export const DB_NAME: string = process.env.DB_NAME as string
 export const DB_PASSWORD: string = process.env.DB_PASSWORD as string
 export const DB_PORT: string = process.env.DB_PORT as string
 
+//redis config
+export const RATE_LIMIT: number = Number(process.env.RATE_LIMIT)
+export const RATE_LIMIT_WINDOW_IN_SECONDS: number = Number(process.env.RATE_LIMIT_WINDOW_IN_SECONDS)
+
 //server config
 export const PORT: number = Number(process.env.PORT)

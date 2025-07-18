@@ -6,8 +6,11 @@ import {verifyLoginToken, clearToken} from "./middleware/verification"
 import cookieParser from "cookie-parser"
 import userRouter from "./router/userRouter"
 import { PORT } from "./config";
+import { createClient } from "redis";
+import { RedisClientType } from "@redis/client";
 
 const app:Application = express();
+const redisClient:RedisClientType = createClient();
 
 
 //middleware
@@ -34,7 +37,13 @@ app.post("/logout", clearToken);
 //API
 app.use("/api", userRouter);
 
-
-app.listen(PORT, "0.0.0.0", ()=>{
+async function startServer() {
+  await redisClient.connect();
+  console.log("Redis connected successfully");
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`server started on http://localhost:${PORT}`);
-})
+  })
+}
+startServer();
+
+export {redisClient}

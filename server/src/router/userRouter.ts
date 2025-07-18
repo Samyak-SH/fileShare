@@ -1,10 +1,12 @@
 import express, { Router, Request, Response } from "express"
-import {verifyToken} from "../middleware/verification"
+import {rateLimiter, verifyToken} from "../middleware/verification"
 import { AuthorizedRequeset } from "../types/user";
-import { uploadFile, getAllFiles, updateFileDetails } from "../controller/fileController";
+import { uploadFile, getAllFiles, updateFileDetails, viewFile } from "../controller/fileController";
 
 const userRouter:Router = express.Router();
 
+//middleware
+userRouter.use(rateLimiter);
 userRouter.use(verifyToken);
 
 function requestWrapper(req:Request, res:Response, cb:any){
@@ -24,4 +26,8 @@ userRouter.get("/getAllFiles",(req:Request, res:Response)=>{
     requestWrapper(req,res, getAllFiles)
 })
 
-export default userRouter
+userRouter.get("/viewFile", (req:Request, res:Response)=>{
+    requestWrapper(req,res, viewFile)
+})
+
+export default userRouter   

@@ -4,7 +4,6 @@ export interface uploadedFile {
     path: string
     type: string,
     size: string,
-    s3_key : string,
 }
 
 export interface updatedFile{
