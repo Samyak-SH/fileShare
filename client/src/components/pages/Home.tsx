@@ -399,17 +399,11 @@ export default function Home() {
     setSelectedFile(null)
   }
 
-  return (
+   return (
     <div className="min-h-screen bg-black text-white">
-      {toast && (
-        <Toast
-          id="manual-toast"
-          title={toast.message}
-          type={mapToastType(toast.type)}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
+      {/* Header */}
       <header className="flex justify-between items-center p-4 bg-black border-b border-gray-800">
         <div className="flex items-center space-x-2">
           <File className="h-6 w-6 text-white" />
@@ -439,18 +433,9 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ✅ Search bar */}
-      <div className="px-4 py-2 border-b border-gray-800 bg-black">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search files..."
-          className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
-        />
-      </div>
-
-      <div ref={containerRef} className="flex h-[calc(100vh-73px-50px)] relative">
+      {/* Main Layout */}
+      <div ref={containerRef} className="flex h-[calc(100vh-73px)] relative">
+        {/* Left Sidebar - File List */}
         <div
           ref={sidebarRef}
           className="border-r border-gray-800 bg-black flex-shrink-0"
@@ -465,11 +450,10 @@ export default function Home() {
             onNavigateUp={handleNavigateUp}
             onBreadcrumbClick={handleBreadcrumbClick}
             isLoading={isLoading}
-            onDropFileToFolder={handleDropFileToFolder} // ✅ NEW
-            onRenameFile={handleRenameFile}             // ✅ NEW
           />
         </div>
 
+        {/* Resize Handle */}
         <div
           className="w-1 bg-gray-800 hover:bg-gray-600 cursor-col-resize flex-shrink-0 transition-colors duration-200 relative group"
           onMouseDown={handleMouseDown}
@@ -478,10 +462,12 @@ export default function Home() {
           <div className="absolute inset-y-0 -left-1 -right-1 w-3" />
         </div>
 
+        {/* Right Content Area - Analytics */}
         <div className="flex-1 bg-black min-w-0">
           <div className="p-6">
             {selectedFile && !selectedFile.isFolder ? (
               <div className="space-y-6">
+                {/* File Info */}
                 <div className="text-center">
                   <h2 className="text-xl font-semibold text-white mb-2">{selectedFile.name}</h2>
                   <p className="text-sm text-gray-500 mb-4">Path: {selectedFile.path}</p>
@@ -494,15 +480,27 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex justify-center">
+                {/* Generate URL Button */}
+                <div className="flex justify-center space-x-4">
+                  {" "}
+                  {/* Added space-x-4 for spacing */}
                   <Button
                     onClick={() => setIsGenerateUrlModalOpen(true)}
                     className="bg-white text-black hover:bg-gray-200 font-medium px-6 py-2"
                   >
                     Generate Sharing URL
                   </Button>
+                  <Button
+                    onClick={() =>
+                      window.open(`/view?id=${selectedFile.id}&name=${encodeURIComponent(selectedFile.name)}`, "_blank")
+                    }
+                    className="bg-black text-white hover:bg-gray-900 font-medium px-6 py-2"
+                  >
+                    View File
+                  </Button>
                 </div>
 
+                {/* Placeholder for Analytics */}
                 <div className="text-center text-gray-400 mt-8">
                   <p>File analytics and additional details will be displayed here</p>
                 </div>
@@ -523,18 +521,23 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Upload Modal */}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={handleFileUpload}
         currentPath={currentPath}
       />
+
+      {/* Create Folder Modal */}
       <CreateFolderModal
         isOpen={isCreateFolderModalOpen}
         onClose={() => setIsCreateFolderModalOpen(false)}
         onCreateFolder={handleCreateFolder}
         currentPath={currentPath}
       />
+
+      {/* Generate URL Modal */}
       <GenerateUrlModal
         isOpen={isGenerateUrlModalOpen}
         onClose={() => setIsGenerateUrlModalOpen(false)}

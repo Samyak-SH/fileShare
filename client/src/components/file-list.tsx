@@ -1,6 +1,6 @@
 "use client"
 import {
-  File,
+  FileIcon,
   FileText,
   ImageIcon,
   Archive,
@@ -12,9 +12,15 @@ import {
   FolderPlus,
   ArrowUp,
   ChevronRight,
+  MoreHorizontal,
+  FilePenLine,
 } from "lucide-react"
+import type React from "react"
+
+import { useState } from "react" // Import useState for drag state
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface FileItem {
   id: string
@@ -36,8 +42,8 @@ interface FileListProps {
   onNavigateUp: () => void
   onBreadcrumbClick: (index: number) => void
   isLoading: boolean
-  onDropFileToFolder?: (fileId: string, targetFolderPath: string) => void
-  onRenameFile?: (fileId: string, newName: string) => void
+  onRenameFile: (file: FileItem) => void
+  onMoveFile: (draggedFileId: string, targetPath: string) => void
 }
 
 const getFileIcon = (type: string, isFolder: boolean) => {
@@ -48,7 +54,7 @@ const getFileIcon = (type: string, isFolder: boolean) => {
   if (type.includes("pdf") || type.includes("document")) return FileText
   if (type.includes("zip") || type.includes("rar")) return Archive
   if (type.includes("javascript") || type.includes("typescript") || type.includes("json")) return Code
-  return File
+  return FileIcon
 }
 
 const formatFileSize = (bytes: number) => {
@@ -77,21 +83,61 @@ export function FileList({
   onNavigateUp,
   onBreadcrumbClick,
   isLoading,
-  onDropFileToFolder,
   onRenameFile,
+  onMoveFile,
 }: FileListProps) {
+  const [isDraggingOverList, setIsDraggingOverList] = useState(false)
+
+  // Create breadcrumb items
   const getBreadcrumbs = () => {
     if (currentPath === "/") return [{ name: "Root", path: "/" }]
+
     const parts = currentPath.split("/").filter(Boolean)
     const breadcrumbs = [{ name: "Root", path: "/" }]
+
     parts.forEach((part, index) => {
       const path = `/${parts.slice(0, index + 1).join("/")}/`
       breadcrumbs.push({ name: part, path })
     })
+
     return breadcrumbs
   }
 
   const breadcrumbs = getBreadcrumbs()
+
+  const handleDragStart = (e: React.DragEvent, fileId: string) => {
+    e.dataTransfer.setData("fileId", fileId)
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault() // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move"
+    setIsDraggingOverList(true) // Set state for visual feedback
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    setIsDraggingOverList(false) // Reset state when drag leaves
+  }
+
+  const handleDropOnFolder = (e: React.DragEvent, targetFolder: FileItem) => {
+    e.preventDefault()
+    setIsDraggingOverList(false) // Reset state on drop
+    const draggedFileId = e.dataTransfer.getData("fileId")
+    if (draggedFileId && targetFolder.isFolder) {
+      onMoveFile(draggedFileId, targetFolder.path)
+    }
+  }
+
+  const handleDropOnList = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDraggingOverList(false) // Reset state on drop
+    const draggedFileId = e.dataTransfer.getData("fileId")
+    if (draggedFileId) {
+      // Move to the current directory (parent of the items in this list)
+      onMoveFile(draggedFileId, currentPath)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -105,6 +151,7 @@ export function FileList({
 
   return (
     <div className="h-full flex flex-col">
+      {/* Header with breadcrumbs */}
       <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wide">Files ({files.length})</h2>
@@ -119,6 +166,7 @@ export function FileList({
           </Button>
         </div>
 
+        {/* Breadcrumb Navigation */}
         <div className="flex items-center space-x-1 text-xs text-gray-400 overflow-x-auto">
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.path} className="flex items-center space-x-1 flex-shrink-0">
@@ -136,6 +184,7 @@ export function FileList({
           ))}
         </div>
 
+        {/* Up Navigation Button */}
         {currentPath !== "/" && (
           <Button
             onClick={onNavigateUp}
@@ -149,7 +198,16 @@ export function FileList({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* File List - Main Drop Target */}
+      <div
+        className={cn(
+          "flex-1 overflow-y-auto p-2",
+          isDraggingOverList && "border-2 border-dashed border-blue-500 rounded-md", // Visual feedback
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDropOnList} // Handle drop for moving to current directory
+      >
         {files.length === 0 ? (
           <div className="p-4">
             <div className="text-center text-gray-400 py-8">
@@ -159,7 +217,8 @@ export function FileList({
             </div>
           </div>
         ) : (
-          <div className="p-2">
+          <div className="p-0">
+            {/* Sort folders first, then files */}
             {[...files]
               .sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1
@@ -173,23 +232,16 @@ export function FileList({
                 return (
                   <div
                     key={file.id}
-                    draggable={!file.isFolder}
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", file.id)}
-                    onDragOver={(e) => {
-                      if (file.isFolder) e.preventDefault()
-                    }}
-                    onDrop={(e) => {
-                      if (file.isFolder) {
-                        const draggedFileId = e.dataTransfer.getData("text/plain")
-                        onDropFileToFolder?.(draggedFileId, file.path.endsWith("/") ? file.path : file.path + "/")
-                      }
-                    }}
                     onClick={() => onFileSelect(file)}
+                    draggable={true} // Make files/folders draggable
+                    onDragStart={(e) => handleDragStart(e, file.id)}
+                    onDragOver={file.isFolder ? handleDragOver : undefined} // Only folders are drop targets
+                    onDrop={file.isFolder ? (e) => handleDropOnFolder(e, file) : undefined} // Only folders are drop targets
                     className={cn(
-                      "flex items-center space-x-3 p-3 rounded-md cursor-pointer transition-colors",
+                      "flex items-center space-x-3 p-3 rounded-md cursor-pointer transition-colors relative",
                       "hover:bg-gray-900",
                       isSelected && "bg-gray-800 border border-gray-700",
-                      file.isFolder && "hover:bg-gray-800"
+                      file.isFolder && "hover:bg-gray-800",
                     )}
                   >
                     <IconComponent
@@ -197,29 +249,10 @@ export function FileList({
                     />
 
                     <div className="flex-1 min-w-0">
-                      <div
-                        contentEditable={!file.isFolder}
-                        suppressContentEditableWarning
-                        onDoubleClick={(e) => e.currentTarget.focus()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            (e.currentTarget as HTMLElement).blur();
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const newName = e.currentTarget.textContent?.trim();
-                          if (newName && newName !== file.name) {
-                            onRenameFile?.(file.id, newName);
-                          }
-                        }}
-                        className="text-sm font-medium text-white truncate cursor-text"
-                      >
+                      <div className="text-sm font-medium text-white truncate" title={file.name}>
                         {file.name}
                         {file.isFolder && <span className="text-gray-500 ml-1">/</span>}
                       </div>
-
-
                       <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
                         {!file.isFolder && (
                           <>
@@ -230,6 +263,34 @@ export function FileList({
                         <span>{formatDate(file.uploadedAt)}</span>
                       </div>
                     </div>
+
+                    {/* Dropdown Menu for actions */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          onClick={(e) => e.stopPropagation()} // Prevent file selection on menu click
+                        >
+                          <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                          <span className="sr-only">More actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white border-black">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onRenameFile(file)
+                          }}
+                          className="text-black hover:bg-gray-100 cursor-pointer"
+                        >
+                          <FilePenLine className="mr-2 h-4 w-4" />
+                          <span>Rename</span>
+                        </DropdownMenuItem>
+                        {/* Add other actions here like Delete, Share etc. */}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )
               })}
