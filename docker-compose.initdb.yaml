@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: fs-database
-    image : postgres
+    image: postgres
     ports:
       - "5432:5432"
     environment:
@@ -11,6 +11,23 @@ services:
     volumes:
       - fileshare-db:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
-      
+    networks:
+      - fileshare-network
+
+  redis:
+    container_name: fs-redis
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - fileshare-redis:/data
+    networks:
+      - fileshare-network
+
+networks:
+  fileshare-network:
+    driver: bridge
+
 volumes:
   fileshare-db:
+  fileshare-redis:

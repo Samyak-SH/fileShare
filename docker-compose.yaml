@@ -39,6 +39,17 @@ services:
     volumes:
       - fileshare-db:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
+
+  redis:
+    container_name: fs-redis
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - fileshare-redis:/data
+    networks:
+      - fileshare-network
+
   
 networks:
   fileshare-network:
@@ -46,3 +57,4 @@ networks:
 
 volumes:
   fileshare-db:
+  fileshare-redis:
