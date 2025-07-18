@@ -1,4 +1,17 @@
 services:
+  server:
+    container_name: fs-server
+    build : ./server
+    image : fileshare-server
+    ports:
+      - "80:80"
+    env_file:
+      - ./server/.env
+    networks:
+      - fileshare-network
+    depends_on:
+      - postgres
+      - redis
   postgres:
     container_name: fs-database
     image : postgres
