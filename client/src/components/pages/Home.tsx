@@ -241,15 +241,8 @@ export default function Home() {
 
       const fullPath = currentPath === "/" ? `/${fileName}` : `${currentPath}${fileName}`
 
-      const metadata = {
-        originalName: file.name,
-        customName: fileName,
-        size: file.size,
-        type: file.type || "application/octet-stream",
-        path: fullPath,
-      }
-
-      formData.append("metadata", JSON.stringify(metadata))
+      
+      // formData.append("metadata", JSON.stringify(metadata))
       formData.append("path", fullPath)
       // console.log(metadata);
       const token = localStorage.getItem("x-auth-token");
@@ -260,18 +253,26 @@ export default function Home() {
           Authorization : `Bearer ${token}`
         },
         credentials: 'include',
-        body: JSON.stringify(metadata),
       })
-
+      
       const result = await response.json()
-      console.log("result ", result.presignedURL)
-
+      const presignedURL = result.presignedURL;
+      const fid = result.fid;
+      const metadata = {
+        originalName: file.name,
+        customName: fileName,
+        size: file.size,
+        type: file.type || "application/octet-stream",
+        path: fullPath,
+        fid : fid
+      }
+      
       if (!response.ok) {
         setToast({ message: result.message || "Upload failed", type: "error" })
         return
       }
 
-      const s3UploadResponse = await fetch(result.presignedURL, {
+      const s3UploadResponse = await fetch(presignedURL, {
         method: "PUT",
         headers: {
           "Content-Type": file.type || "application/octet-stream",
@@ -282,6 +283,20 @@ export default function Home() {
       if (!s3UploadResponse.ok) {
         setToast({ message: "Upload failed", type: "error" })
         return
+      }
+
+      const sucessVerification = await fetch(`${SERVER_URL}/api/uploadFileSucess`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization : `Bearer ${token}`
+        },
+        credentials: 'include',
+        body : JSON.stringify(metadata)
+      })
+      if(!sucessVerification.ok){
+        setToast({message : "Upload failed", type:"error"})
+        return;
       }
 
 
