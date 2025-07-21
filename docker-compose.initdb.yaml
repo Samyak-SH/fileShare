@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: fs-database
+    container_name: fs-postgres
     image: postgres
     ports:
       - "5432:5432"
@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=fileshare
     volumes:
-      - fileshare-db:/var/lib/postgresql/data
+      - fileshare-postgres:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - fileshare-network
@@ -23,11 +23,25 @@ services:
       - fileshare-redis:/data
     networks:
       - fileshare-network
+  
+  mongodb:
+    container_name: fs-mongo
+    image : mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    networks:
+      - fileshare-network
+    volumes:
+      - fileshare-mongo:/data/db
 
 networks:
   fileshare-network:
     driver: bridge
 
 volumes:
-  fileshare-db:
   fileshare-redis:
+  fileshare-postgres:
+  fileshare-mongo:

@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from "express"
 import {rateLimiter, verifyToken} from "../middleware/verification"
 import { AuthorizedRequeset } from "../types/user";
-import { uploadFile, uploadFileSucess, getAllFiles, updateFileDetails, viewFile } from "../controller/fileController";
+import { uploadFile, uploadFileSucess, getAllFiles, updateFileDetails, viewFile, generateUrl } from "../controller/fileController";
 
 const userRouter:Router = express.Router();
 
@@ -32,6 +32,10 @@ userRouter.get("/getAllFiles",(req:Request, res:Response)=>{
 
 userRouter.get("/viewFile", (req:Request, res:Response)=>{
     requestWrapper(req,res, viewFile)
+})
+
+userRouter.get("/generateUrl", (req:Request, res:Response)=>{
+    requestWrapper(req,res, generateUrl)
 })
 
 export default userRouter   

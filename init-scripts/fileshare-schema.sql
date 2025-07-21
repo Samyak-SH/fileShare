@@ -12,7 +12,8 @@ CREATE TABLE users (
 -- Create files table
 CREATE TABLE files (
     fid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    customname VARCHAR(255) NOT NULL,
     uid UUID NOT NULL,
     type VARCHAR(100) NOT NULL,
     size TEXT NOT NULL,

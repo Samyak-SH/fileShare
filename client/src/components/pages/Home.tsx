@@ -82,12 +82,14 @@ export default function Home() {
         const res = await response.json();
         if (!res.files) return;
         const rawFiles = res.files as any[];
+        console.log(rawFiles);
 
         const flatFiles: FileItem[] = rawFiles.map((f) => {
-          const strippedName = f.name.includes("-") ? f.name.substring(0, f.name.lastIndexOf("-")) : f.name;
+          // const strippedName = f.name.includes("-") ? f.name.substring(0, f.name.lastIndexOf("-")) : f.name;
+          console.log(f);
           return {
             id: f.fid,
-            name: strippedName,
+            name: f.customname,
             size: parseInt(f.size),
             type: f.type,
             path: f.path,
@@ -256,6 +258,13 @@ export default function Home() {
       })
       
       const result = await response.json()
+      
+      if (!response.ok) {
+        const errorMsg = result.message || "Upload failed";
+        setToast({ message: errorMsg, type: "error" });
+        throw new Error(errorMsg);
+      }
+      
       const presignedURL = result.presignedURL;
       const fid = result.fid;
       const metadata = {
@@ -265,11 +274,6 @@ export default function Home() {
         type: file.type || "application/octet-stream",
         path: fullPath,
         fid : fid
-      }
-      
-      if (!response.ok) {
-        setToast({ message: result.message || "Upload failed", type: "error" })
-        return
       }
 
       const s3UploadResponse = await fetch(presignedURL, {
@@ -281,8 +285,9 @@ export default function Home() {
       })
 
       if (!s3UploadResponse.ok) {
-        setToast({ message: "Upload failed", type: "error" })
-        return
+        const errorMsg = "Upload to S3 failed";
+        setToast({ message: errorMsg, type: "error" });
+        throw new Error(errorMsg);
       }
 
       const sucessVerification = await fetch(`${SERVER_URL}/api/uploadFileSucess`, {
@@ -295,8 +300,9 @@ export default function Home() {
         body : JSON.stringify(metadata)
       })
       if(!sucessVerification.ok){
-        setToast({message : "Upload failed", type:"error"})
-        return;
+        const errorMsg = "Upload verification failed";
+        setToast({message : errorMsg, type:"error"})
+        throw new Error(errorMsg);
       }
 
 
@@ -563,4 +569,3 @@ export default function Home() {
   )
 
 }
-

@@ -1,12 +1,12 @@
 import { Pool, PoolConfig } from "pg";
-import { DB_HOST } from "../config";
+import { POSTGRES_DB_HOST, POSTGRES_DB_NAME, POSTGRES_DB_PASSWORD, POSTGRES_DB_PORT, POSTGRES_DB_USER } from "../config";
 
 const pc:PoolConfig = {
-    user : "postgres",
-    host : DB_HOST,
-    database : "fileshare",
-    password : "root",
-    port : 5432,
+    user : POSTGRES_DB_USER,
+    host : POSTGRES_DB_HOST,
+    database : POSTGRES_DB_NAME,
+    password : POSTGRES_DB_PASSWORD,
+    port : POSTGRES_DB_PORT
 }
 
 const pool = new Pool(pc)

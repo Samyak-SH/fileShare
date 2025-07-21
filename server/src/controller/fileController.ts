@@ -16,6 +16,10 @@ const s3Client: S3Client = new S3Client({
     }
 })
 
+export async function generateUrl(req:AuthorizedRequeset, res: Response){
+    
+}
+
 export async function getAllFiles(req: AuthorizedRequeset, res: Response) {
     console.log("getting all file for ", req.user.id);
     try {
@@ -37,7 +41,7 @@ export async function updateFileDetails(req: AuthorizedRequeset, res: Response) 
     try {
         const upf: updatedFile = {
             fid: req.body.fid,
-            updatedName: req.body.name,
+            updatedName: req.body.filename,
             updatedPath: req.body.path,
         }
         console.log("filed that came for udpate, ", upf);
@@ -82,7 +86,8 @@ export async function uploadFileSucess(req: AuthorizedRequeset, res: Response) {
     }
     catch (err) {
         console.error("failed to update metadata ", err);
-        await deleteObject(req.body.fid);
+        const s3_key: string = `${req.user.id}/${req.body.fid}`;
+        await deleteObject(s3_key);
         return res.status(500).json({ message: "Failed to upload file" });
     }
 }
@@ -121,6 +126,7 @@ async function generateGetObjectURL(fileS3_key: string): Promise<string | null> 
 }
 
 async function deleteObject(fileS3_key: string) {
+    console.log('deleting file object with key ', fileS3_key);
     const command = new DeleteObjectCommand({
         Bucket: BUCKET_NAME,
         Key: fileS3_key
