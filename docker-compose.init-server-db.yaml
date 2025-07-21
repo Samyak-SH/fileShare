@@ -37,6 +37,19 @@ services:
     networks:
       - fileshare-network
 
+  mongodb:
+    container_name: fs-mongo
+    image : mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    networks:
+      - fileshare-network
+    volumes:
+      - fileshare-mongo:/data/db
+
   
 networks:
   fileshare-network:
@@ -45,3 +58,4 @@ networks:
 volumes:
   fileshare-db:
   fileshare-redis:
+  fileshare-mongo:
