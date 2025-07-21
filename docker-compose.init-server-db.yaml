@@ -12,20 +12,21 @@ services:
     depends_on:
       - postgres
       - redis
+      - mongodb
   postgres:
-    container_name: fs-database
-    image : postgres
+    container_name: fs-postgres
+    image: postgres
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=fileshare
+    volumes:
+      - fileshare-postgres:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - fileshare-network
-    volumes:
-      - fileshare-db:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
 
   redis:
     container_name: fs-redis
@@ -36,7 +37,7 @@ services:
       - fileshare-redis:/data
     networks:
       - fileshare-network
-
+  
   mongodb:
     container_name: fs-mongo
     image : mongo
@@ -49,13 +50,12 @@ services:
       - fileshare-network
     volumes:
       - fileshare-mongo:/data/db
-
   
 networks:
   fileshare-network:
     driver: bridge
 
 volumes:
-  fileshare-db:
+  fileshare-postgres:
   fileshare-redis:
   fileshare-mongo:
