@@ -54,9 +54,9 @@ export function CreateFolderModal({ isOpen, onClose, onCreateFolder, currentPath
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white border-2 border-black">
+      <DialogContent className="sm:max-w-md bg-black/70 border-2 border-cyan-700 backdrop-blur-xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-black flex items-center space-x-2">
+          <DialogTitle className="text-cyan-300 flex items-center space-x-2">
             <FolderPlus className="h-5 w-5" />
             <span>Create New Folder</span>
           </DialogTitle>
@@ -64,13 +64,13 @@ export function CreateFolderModal({ isOpen, onClose, onCreateFolder, currentPath
 
         <div className="space-y-4">
           {/* Current Path Display */}
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-cyan-200">
             <span className="font-medium">Location:</span> {currentPath}
           </div>
 
           {/* Folder Name Input */}
           <div className="space-y-2">
-            <Label htmlFor="folderName" className="text-black">
+            <Label htmlFor="folderName" className="text-cyan-200">
               Folder Name
             </Label>
             <Input
@@ -79,14 +79,14 @@ export function CreateFolderModal({ isOpen, onClose, onCreateFolder, currentPath
               onChange={(e) => setFolderName(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Enter folder name"
-              className="border-black focus:border-black"
+              className="border-cyan-700 focus:border-cyan-400 bg-black/40 text-cyan-100 placeholder-cyan-700"
               autoFocus
             />
             {folderName.trim().length === 0 && folderName.length > 0 && (
-              <div className="text-xs text-red-600 mt-1">Folder name cannot be empty</div>
+              <div className="text-xs text-red-400 mt-1">Folder name cannot be empty</div>
             )}
             {/[<>:"/\\|?*]/.test(folderName) && (
-              <div className="text-xs text-red-600 mt-1">Folder name cannot contain: {'< > : " / \\ | ? *'}</div>
+              <div className="text-xs text-red-400 mt-1">Folder name cannot contain: {'< > : " / \\ | ? *'}</div>
             )}
           </div>
 
@@ -96,14 +96,14 @@ export function CreateFolderModal({ isOpen, onClose, onCreateFolder, currentPath
               variant="outline"
               onClick={handleClose}
               disabled={isCreating}
-              className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+              className="border-cyan-700 text-cyan-200 hover:bg-cyan-900/30 hover:text-white bg-transparent"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCreateFolder}
               disabled={!folderName.trim() || /[<>:"/\\|?*]/.test(folderName) || isCreating}
-              className="bg-black text-white hover:bg-gray-900"
+              className="bg-cyan-500 text-white hover:bg-cyan-600"
             >
               {isCreating ? (
                 <div className="flex items-center space-x-2">

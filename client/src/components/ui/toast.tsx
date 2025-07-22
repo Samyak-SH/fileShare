@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { forwardRef, useState, useEffect, useRef, useCallback, createContext, type ReactNode } from "react"
-
+import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -69,18 +69,20 @@ const ToastViewport = ({ toasts, onRemoveToast }: ToastViewportProps) => {
 
   return (
     <div
-      className="fixed bottom-0 right-0 z-[100] flex flex-col gap-2 m-6 w-full max-w-[380px] pointer-events-none"
+      className="fixed bottom-0 right-0 left-auto top-auto z-[100] flex flex-col gap-2 m-6 w-full max-w-[380px] pointer-events-none"
       onMouseEnter={() => setViewportPaused(true)}
       onMouseLeave={() => setViewportPaused(false)}
     >
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          {...toast}
-          pauseDuration={viewportPaused ? Number.POSITIVE_INFINITY : undefined}
-          onDismiss={() => onRemoveToast(toast.id)}
-        />
-      ))}
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            {...toast}
+            pauseDuration={viewportPaused ? Number.POSITIVE_INFINITY : undefined}
+            onDismiss={() => onRemoveToast(toast.id)}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
@@ -91,71 +93,85 @@ interface ToastProps extends ToastDetails {
 }
 
 const Toast = forwardRef<HTMLDivElement, ToastProps>(
-  ({ id, title, description, action, duration = 5000, type = "default", onClose, pauseDuration, onDismiss }, ref) => {
+  ({ id, title, description, action, duration = 5000, type = "default", onClose, onDismiss }, ref) => {
     const timerRef = useRef<NodeJS.Timeout | null>(null)
-    const [visible, setVisible] = useState(true)
+    const [progress, setProgress] = useState(100)
 
     useEffect(() => {
-      if (!visible) return
-
-      const handleDismiss = () => {
-        setVisible(false)
+      let start = Date.now()
+      let frame: number
+      const tick = () => {
+        const elapsed = Date.now() - start
+        const percent = Math.max(0, 100 - (elapsed / duration) * 100)
+        setProgress(percent)
+        if (percent > 0) {
+          frame = requestAnimationFrame(tick)
+        }
+      }
+      frame = requestAnimationFrame(tick)
+      timerRef.current = setTimeout(() => {
         onDismiss?.()
-      }
-
-      timerRef.current = setTimeout(handleDismiss, duration)
-
+      }, duration)
       return () => {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current)
-        }
+        if (timerRef.current) clearTimeout(timerRef.current)
+        if (frame) cancelAnimationFrame(frame)
       }
-    }, [duration, onDismiss, visible])
-
-    useEffect(() => {
-      if (pauseDuration === Number.POSITIVE_INFINITY) {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current)
-        }
-      } else if (timerRef.current) {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current)
-        }
-        timerRef.current = setTimeout(() => {
-          setVisible(false)
-          onDismiss?.()
-        }, duration)
-      }
-    }, [duration, onDismiss, pauseDuration])
+    }, [duration, onDismiss])
 
     const handleClose = () => {
-      setVisible(false)
       onClose?.()
       onDismiss?.()
     }
 
+    const accentColor = type === "destructive" ? "bg-red-500" : "bg-cyan-500"
+    const progressColor = type === "destructive" ? "bg-red-400" : "bg-cyan-400"
+
     return (
-      visible && (
-        <div
-          ref={ref}
-          className={cn(
-            "group pointer-events-auto relative flex w-full items-center overflow-hidden rounded-md border bg-background px-4 py-2 shadow-sm transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:zoom-out-95 data-[side=top]:border-b data-[side=bottom]:border-t",
-            type === "destructive" && "border-destructive bg-destructive text-destructive-foreground",
-            "border-border",
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+        className={cn(
+          "group pointer-events-auto relative flex w-full items-center overflow-hidden rounded-xl border shadow-lg backdrop-blur-md bg-white/10 dark:bg-black/40 px-5 py-4",
+          "transition-all duration-300",
+          type === "destructive" ? "border-red-500" : "border-cyan-500"
+        )}
+        style={{ boxShadow: '0 8px 32px 0 rgba(0,0,0,0.25)' }}
+      >
+        {/* Accent bar */}
+        <div className={cn("absolute left-0 top-0 h-full w-1.5", accentColor)} />
+        <div className="flex-1 grid gap-1 pl-4">
+          {title && (
+            <ToastTitle className={type === "destructive" ? "text-red-400" : "text-white font-semibold"}>{title}</ToastTitle>
           )}
-        >
-          <div className="grid gap-1">
-            {title && <ToastTitle>{title}</ToastTitle>}
-            {description && <ToastDescription>{description}</ToastDescription>}
-          </div>
-          {action && (
-            <ToastAction altLabel={action.label} onClick={action.onClick}>
-              {action.label}
-            </ToastAction>
+          {description && (
+            <ToastDescription className={type === "destructive" ? "text-red-300" : "text-gray-200"}>{description}</ToastDescription>
           )}
-          <ToastClose onClick={handleClose} />
         </div>
-      )
+        {action && (
+          <ToastAction altLabel={action.label} onClick={action.onClick}>
+            {action.label}
+          </ToastAction>
+        )}
+        <button
+          onClick={handleClose}
+          className={cn(
+            "ml-4 flex items-center justify-center rounded-full p-1.5 transition hover:bg-white/20 focus:bg-white/30 focus:outline-none",
+            type === "destructive" ? "text-red-400" : "text-cyan-400"
+          )}
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        {/* Progress bar */}
+        <div className="absolute left-0 bottom-0 h-1 w-full bg-transparent">
+          <div
+            className={cn("h-full transition-all duration-100", progressColor)}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </motion.div>
     )
   },
 )
@@ -206,4 +222,4 @@ const ToastAction = forwardRef<HTMLButtonElement, ToastActionProps>(({ className
 ))
 ToastAction.displayName = "ToastAction"
 
-export { Toast, ToastViewport, ToastTitle, ToastDescription, ToastClose, ToastAction }
+export { Toast, ToastViewport, ToastTitle, ToastDescription, ToastClose, ToastAction, ToastContext }

@@ -81,9 +81,9 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white border-2 border-black">
+      <DialogContent className="sm:max-w-md bg-black/70 border-2 border-cyan-700 backdrop-blur-xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-black flex items-center space-x-2">
+          <DialogTitle className="text-cyan-300 flex items-center space-x-2">
             <Link className="h-5 w-5" />
             <span>Generate Sharing URL</span>
           </DialogTitle>
@@ -91,9 +91,9 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
 
         <div className="space-y-6">
           {/* File Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-600">
-              <div className="font-medium text-black mb-1">{selectedFile.name}</div>
+          <div className="bg-black/40 p-4 rounded-lg border border-cyan-800">
+            <div className="text-sm text-cyan-200">
+              <div className="font-medium text-cyan-100 mb-1">{selectedFile.name}</div>
               <div>Path: {selectedFile.path}</div>
               <div>Size: {(selectedFile.size / 1024).toFixed(2)} KB</div>
             </div>
@@ -101,16 +101,16 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
 
           {/* Sharing Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-black">Sharing Settings</h3>
+            <h3 className="text-lg font-medium text-cyan-100">Sharing Settings</h3>
 
             {/* View Once Option */}
-            <div className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg">
-              <Checkbox id="viewOnce" checked={viewOnce} onCheckedChange={handleViewOnceChange} className="mt-0.5" />
+            <div className="flex items-start space-x-3 p-3 border border-cyan-800 rounded-lg bg-black/30">
+              <Checkbox id="viewOnce" checked={viewOnce} onCheckedChange={handleViewOnceChange} className="mt-0.5 border-cyan-700" />
               <div className="flex-1">
-                <Label htmlFor="viewOnce" className="text-black font-medium cursor-pointer">
+                <Label htmlFor="viewOnce" className="text-cyan-200 font-medium cursor-pointer">
                   View Once
                 </Label>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-cyan-400 mt-1">
                   The file can only be viewed once. After viewing, the link becomes invalid.
                 </p>
               </div>
@@ -121,7 +121,7 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
               <div className="space-y-4">
                 {/* Expire Time */}
                 <div className="space-y-2">
-                  <Label htmlFor="expireHours" className="text-black flex items-center space-x-2">
+                  <Label htmlFor="expireHours" className="text-cyan-200 flex items-center space-x-2">
                     <Clock className="h-4 w-4" />
                     <span>Expire Time (Hours)</span>
                   </Label>
@@ -133,14 +133,14 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
                     value={expireHours || ""}
                     onChange={(e) => setExpireHours(e.target.value ? Number(e.target.value) : undefined)}
                     placeholder="Enter hours (e.g., 24)"
-                    className="border-black focus:border-black"
+                    className="border-cyan-700 focus:border-cyan-400 bg-black/40 text-cyan-100 placeholder-cyan-700"
                   />
-                  <p className="text-xs text-gray-500">Leave empty for no expiration. Maximum: 8760 hours (1 year)</p>
+                  <p className="text-xs text-cyan-600">Leave empty for no expiration. Maximum: 8760 hours (1 year)</p>
                 </div>
 
                 {/* Max Views */}
                 <div className="space-y-2">
-                  <Label htmlFor="maxViews" className="text-black flex items-center space-x-2">
+                  <Label htmlFor="maxViews" className="text-cyan-200 flex items-center space-x-2">
                     <Eye className="h-4 w-4" />
                     <span>Maximum Views</span>
                   </Label>
@@ -152,18 +152,18 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
                     value={maxViews || ""}
                     onChange={(e) => setMaxViews(e.target.value ? Number(e.target.value) : undefined)}
                     placeholder="Enter max views (e.g., 10)"
-                    className="border-black focus:border-black"
+                    className="border-cyan-700 focus:border-cyan-400 bg-black/40 text-cyan-100 placeholder-cyan-700"
                   />
-                  <p className="text-xs text-gray-500">Leave empty for unlimited views. Maximum: 1000 views</p>
+                  <p className="text-xs text-cyan-600">Leave empty for unlimited views. Maximum: 1000 views</p>
                 </div>
               </div>
             )}
 
             {/* Warning for View Once */}
             {viewOnce && (
-              <div className="flex items-start space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-800">
+              <div className="flex items-start space-x-2 p-3 bg-yellow-900/40 border border-yellow-700 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-yellow-200">
                   <strong>Warning:</strong> With "View Once" enabled, the file can only be accessed one time. After the
                   first view, the sharing link will become permanently invalid.
                 </div>
@@ -177,14 +177,14 @@ export function GenerateUrlModal({ isOpen, onClose, onGenerateUrl, selectedFile 
               variant="outline"
               onClick={handleClose}
               disabled={isGenerating}
-              className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+              className="border-cyan-700 text-cyan-200 hover:bg-cyan-900/30 hover:text-white bg-transparent"
             >
               Cancel
             </Button>
             <Button
               onClick={handleGenerateUrl}
               disabled={isGenerating}
-              className="bg-black text-white hover:bg-gray-900"
+              className="bg-cyan-500 text-white hover:bg-cyan-600"
             >
               {isGenerating ? (
                 <div className="flex items-center space-x-2">

@@ -16,6 +16,7 @@ import {
   FilePenLine,
 } from "lucide-react"
 import type React from "react"
+import { AnimatePresence, motion } from "framer-motion"
 
 import { useState } from "react" // Import useState for drag state
 import { Button } from "@/components/ui/button"
@@ -143,43 +144,43 @@ export function FileList({
     return (
       <div className="p-4">
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-black/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
       {/* Header with breadcrumbs */}
-      <div className="p-4 border-b border-gray-800 flex-shrink-0">
+      <div className="p-6 border-b border-gray-800 flex-shrink-0 bg-black/40 backdrop-blur-xl">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-white uppercase tracking-wide">Files ({files.length})</h2>
+          <h2 className="text-base font-bold text-white uppercase tracking-wide drop-shadow">Files ({files.length})</h2>
           <Button
             onClick={onCreateFolder}
             variant="outline"
             size="sm"
-            className="flex items-center space-x-1 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white bg-transparent text-xs"
+            className="flex items-center space-x-1 border-cyan-600 text-cyan-300 hover:bg-cyan-900/30 hover:text-white bg-transparent text-xs shadow"
           >
-            <FolderPlus className="h-3 w-3" />
+            <FolderPlus className="h-4 w-4" />
             <span>New Folder</span>
           </Button>
         </div>
 
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center space-x-1 text-xs text-gray-400 overflow-x-auto">
+        <div className="flex items-center space-x-1 text-xs text-cyan-300 overflow-x-auto">
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.path} className="flex items-center space-x-1 flex-shrink-0">
               <button
                 onClick={() => onBreadcrumbClick(index)}
                 className={cn(
-                  "hover:text-white transition-colors",
-                  index === breadcrumbs.length - 1 ? "text-white font-medium" : "text-gray-400",
+                  "hover:text-cyan-400 transition-colors font-medium",
+                  index === breadcrumbs.length - 1 ? "text-white font-bold" : "text-cyan-300",
                 )}
               >
                 {crumb.name}
               </button>
-              {index < breadcrumbs.length - 1 && <ChevronRight className="h-3 w-3 text-gray-600" />}
+              {index < breadcrumbs.length - 1 && <ChevronRight className="h-3 w-3 text-cyan-700" />}
             </div>
           ))}
         </div>
@@ -190,7 +191,7 @@ export function FileList({
             onClick={onNavigateUp}
             variant="ghost"
             size="sm"
-            className="flex items-center space-x-2 text-gray-400 hover:text-white hover:bg-gray-800 mt-2 w-full justify-start p-2"
+            className="flex items-center space-x-2 text-cyan-400 hover:text-white hover:bg-cyan-900/30 mt-2 w-full justify-start p-2"
           >
             <ArrowUp className="h-4 w-4" />
             <span>Go up</span>
@@ -201,8 +202,8 @@ export function FileList({
       {/* File List - Main Drop Target */}
       <div
         className={cn(
-          "flex-1 overflow-y-auto p-2",
-          isDraggingOverList && "border-2 border-dashed border-blue-500 rounded-md", // Visual feedback
+          "flex-1 overflow-y-auto p-4 bg-black/30",
+          isDraggingOverList && "border-2 border-dashed border-cyan-500 rounded-xl", // Visual feedback
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -210,14 +211,14 @@ export function FileList({
       >
         {files.length === 0 ? (
           <div className="p-4">
-            <div className="text-center text-gray-400 py-8">
-              <Folder className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">This folder is empty</p>
+            <div className="text-center text-cyan-300 py-8">
+              <Folder className="h-12 w-12 mx-auto mb-3 opacity-50 text-cyan-700" />
+              <p className="text-base">This folder is empty</p>
               <p className="text-xs mt-1">Upload files or create folders to get started</p>
             </div>
           </div>
         ) : (
-          <div className="p-0">
+          <AnimatePresence>
             {/* Sort folders first, then files */}
             {[...files]
               .sort((a, b) => {
@@ -230,30 +231,43 @@ export function FileList({
                 const isSelected = selectedFile?.id === file.id
 
                 return (
-                  <div
+                  <motion.div
                     key={file.id}
+                    layout
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, transition: { duration: 0.2 } }}
                     onClick={() => onFileSelect(file)}
                     draggable={true} // Make files/folders draggable
-                    onDragStart={(e) => handleDragStart(e, file.id)}
+                    onDragStart={(e) => handleDragStart(e as any, file.id)}
                     onDragOver={file.isFolder ? handleDragOver : undefined} // Only folders are drop targets
                     onDrop={file.isFolder ? (e) => handleDropOnFolder(e, file) : undefined} // Only folders are drop targets
                     className={cn(
-                      "flex items-center space-x-3 p-3 rounded-md cursor-pointer transition-colors relative",
-                      "hover:bg-gray-900",
-                      isSelected && "bg-gray-800 border border-gray-700",
-                      file.isFolder && "hover:bg-gray-800",
+                      "flex items-center space-x-4 p-4 rounded-xl cursor-pointer transition-all duration-200 relative group shadow-sm",
+                      "hover:bg-cyan-900/30 hover:shadow-lg",
+                      isSelected && "bg-cyan-800/60 border-2 border-cyan-400 shadow-xl",
+                      file.isFolder && "hover:bg-cyan-900/40",
                     )}
+                    style={{
+                      boxShadow: isSelected ? '0 4px 32px 0 rgba(0,255,255,0.10)' : undefined,
+                    }}
                   >
-                    <IconComponent
-                      className={cn("h-4 w-4 flex-shrink-0", file.isFolder ? "text-blue-400" : "text-gray-400")}
-                    />
+                    <div className={cn("flex items-center justify-center h-9 w-9 rounded-lg",
+                      file.isFolder ? "bg-cyan-900/40" : "bg-gray-800/60"
+                    )}>
+                      <IconComponent
+                        className={cn("h-5 w-5 flex-shrink-0", file.isFolder ? "text-cyan-400" : "text-gray-300")}
+                      />
+                    </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white truncate" title={file.name}>
+                      <div className={cn("text-base font-semibold truncate flex items-center gap-1",
+                        isSelected ? "text-cyan-200" : "text-white"
+                      )} title={file.name}>
                         {file.name}
-                        {file.isFolder && <span className="text-gray-500 ml-1">/</span>}
+                        {file.isFolder && <span className="text-cyan-500 ml-1">/</span>}
                       </div>
-                      <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                      <div className="flex items-center space-x-2 text-xs text-cyan-300 mt-1">
                         {!file.isFolder && (
                           <>
                             <span>{formatFileSize(file.size)}</span>
@@ -270,20 +284,20 @@ export function FileList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 bg-cyan-900/30 text-cyan-300 hover:text-white hover:bg-cyan-800/60"
                           onClick={(e) => e.stopPropagation()} // Prevent file selection on menu click
                         >
-                          <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                          <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">More actions</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white border-black">
+                      <DropdownMenuContent align="end" className="bg-black/90 border-cyan-800 text-cyan-100 shadow-xl">
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation()
                             onRenameFile(file)
                           }}
-                          className="text-black hover:bg-gray-100 cursor-pointer"
+                          className="hover:bg-cyan-800/40 cursor-pointer"
                         >
                           <FilePenLine className="mr-2 h-4 w-4" />
                           <span>Rename</span>
@@ -291,10 +305,10 @@ export function FileList({
                         {/* Add other actions here like Delete, Share etc. */}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
+                  </motion.div>
                 )
               })}
-          </div>
+          </AnimatePresence>
         )}
       </div>
     </div>

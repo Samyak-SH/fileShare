@@ -5,6 +5,8 @@ import { useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Download, Scan, Loader2, XCircle, FileIcon } from "lucide-react" // Renamed File to FileIcon
 import { Toast } from "@/components/ui/toast"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
 
@@ -18,6 +20,22 @@ interface FileItem {
   isFolder: boolean
   metadata?: any
 }
+
+const AnimatedGrid = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 0.3 }}
+    transition={{ duration: 1 }}
+    className="absolute inset-0 h-full w-full bg-gradient-to-b from-gray-900 to-black"
+  >
+    <div
+      className="absolute inset-0 bg-grid-white/[0.08] bg-center"
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent, black, transparent)",
+      }}
+    ></div>
+  </motion.div>
+)
 
 export default function ViewFilePage() {
   const [searchParams] = useSearchParams();
@@ -187,64 +205,72 @@ export default function ViewFilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-x-hidden">
+      <AnimatedGrid />
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Header */}
-      <header className="flex justify-between items-center p-4 bg-black border-b border-gray-800 flex-shrink-0">
-        <div className="flex items-center space-x-2">
-          <FileIcon className="h-6 w-6 text-white" /> {/* Used FileIcon */}
-          <h1 className="text-xl font-semibold text-white">File Viewer</h1>
-          {fileDetails && <span className="text-gray-400 ml-4">/ {fileDetails.name}</span>}
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-50 shadow-lg"
+      >
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileIcon className="w-8 h-8 text-cyan-400" />
+            <span className="text-2xl font-bold">File Viewer</span>
+            {fileDetails && <span className="text-cyan-300 ml-4">/ {fileDetails.name}</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleScanVirus}
+              disabled={isScanning || !fileDetails}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 border-cyan-400 text-cyan-300 hover:bg-cyan-900/30 hover:text-white bg-transparent"
+            >
+              {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scan className="h-4 w-4" />}
+              <span>{isScanning ? "Scanning..." : "Scan Virus"}</span>
+            </Button>
+            <Button
+              onClick={handleDownload}
+              disabled={!fileDetails}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 border-cyan-400 text-cyan-300 hover:bg-cyan-900/30 hover:text-white bg-transparent"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download</span>
+            </Button>
+          </div>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <Button
-            onClick={handleScanVirus}
-            disabled={isScanning || !fileDetails}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
-          >
-            {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scan className="h-4 w-4" />}
-            <span>{isScanning ? "Scanning..." : "Scan Virus"}</span>
-          </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={!fileDetails}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
-          >
-            <Download className="h-4 w-4" />
-            <span>Download</span>
-          </Button>
-        </div>
-      </header>
-
+      </motion.header>
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-6 overflow-auto">
+      <main className="flex-1 flex items-center justify-center p-6 overflow-auto relative z-10">
         {isLoading ? (
-          <div className="flex flex-col items-center text-gray-400">
+          <div className="flex flex-col items-center text-cyan-300">
             <Loader2 className="h-8 w-8 animate-spin mb-4" />
             <p>Loading file...</p>
           </div>
         ) : fileDetails ? (
           <div className="w-full h-full flex flex-col items-center justify-center">
-            {renderFileContent()}
-            {scanStatus && (
-              <div
-                className={`mt-4 p-3 rounded-md text-sm ${
-                  scanStatus.includes("No threats") ? "bg-green-900 text-green-200" : "bg-red-900 text-red-200"
-                }`}
-              >
-                {scanStatus}
-              </div>
-            )}
+            <div className="bg-black/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 p-8 max-w-2xl w-full">
+              {renderFileContent()}
+              {scanStatus && (
+                <div
+                  className={`mt-6 p-4 rounded-lg text-base font-semibold ${
+                    scanStatus.includes("No threats") ? "bg-green-900 text-green-200" : "bg-red-900 text-red-200"
+                  }`}
+                >
+                  {scanStatus}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="text-center text-gray-400">
-            <p className="text-lg">No file selected or found.</p>
+          <div className="text-center text-cyan-400">
+            <p className="text-lg font-medium">No file selected or found.</p>
             <p className="text-sm mt-2">Please navigate from the home page to view a file.</p>
           </div>
         )}

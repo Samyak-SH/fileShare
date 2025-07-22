@@ -2,16 +2,18 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useContext } from "react"
 import { Button } from "@/components/ui/button"
 import { Upload, LogOut, File } from "lucide-react"
 import { FileList } from "@/components/file-list"
 import { UploadModal } from "@/components/upload-modal"
 import { CreateFolderModal } from "@/components/create-folder-modal"
 import { GenerateUrlModal } from "@/components/generate-url-modal"
-import { Toast } from "@/components/ui/toast"
+import { ToastContext } from "@/components/ui/toast"
 import { useNavigate } from "react-router-dom"
 import { verifyToken } from "../../verify"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
 
@@ -31,8 +33,25 @@ const mapToastType = (type: "info" | "error" | "success"): "default" | "destruct
   return type === "error" ? "destructive" : "default"
 }
 
+const AnimatedGrid = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 0.3 }}
+    transition={{ duration: 1 }}
+    className="absolute inset-0 h-full w-full bg-gradient-to-b from-gray-900 to-black"
+  >
+    <div
+      className="absolute inset-0 bg-grid-white/[0.08] bg-center"
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent, black, transparent)",
+      }}
+    ></div>
+  </motion.div>
+)
+
 export default function Home() {
   const navigate = useNavigate();
+  const { addToast } = useContext(ToastContext);
   const [files, setFiles] = useState<FileItem[]>([])
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
@@ -40,7 +59,6 @@ export default function Home() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false)
   const [isGenerateUrlModalOpen, setIsGenerateUrlModalOpen] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: "info" | "error" | "success" } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(320)
   const [isResizing, setIsResizing] = useState(false)
@@ -123,7 +141,7 @@ export default function Home() {
         const allFiles = [...folderFiles, ...flatFiles];
         setFiles(allFiles);
       } catch (error) {
-        setToast({ message: "Error loading files", type: "error" });
+        addToast({ id: Date.now().toString(), title: "Error loading files", type: "destructive" });
       } finally {
         setIsLoading(false);
       }
@@ -150,9 +168,9 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Failed to move file");
       setFiles(prev => prev.map(f => f.id === fileId ? { ...f, path: newPath } : f));
-      setToast({ message: `Moved "${file.name}"`, type: "success" });
+      addToast({ id: Date.now().toString(), title: `Moved "${file.name}"`, type: "default" });
     } catch {
-      setToast({ message: "Failed to move file", type: "error" });
+      addToast({ id: Date.now().toString(), title: "Failed to move file", type: "destructive" });
     }
   }
 
@@ -172,10 +190,17 @@ export default function Home() {
       });
       if (!res.ok) throw new Error("Failed to rename");
       setFiles(prev => prev.map(f => f.id === fileId ? { ...f, name: newName, path: newPath } : f));
-      setToast({ message: `Renamed to "${newName}"`, type: "success" });
+      addToast({ id: Date.now().toString(), title: `Renamed to "${newName}"`, type: "default" });
     } catch {
-      setToast({ message: "Rename failed", type: "error" });
+      addToast({ id: Date.now().toString(), title: "Rename failed", type: "destructive" });
     }
+  }
+
+  // Adapt handleRenameFile to match FileList's expected signature
+  const handleRenameFileFromList = (file: FileItem) => {
+    const newName = prompt("Enter new name", file.name)
+    if (!newName || newName === file.name) return
+    handleRenameFile(file.id, newName)
   }
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -261,7 +286,7 @@ export default function Home() {
       
       if (!response.ok) {
         const errorMsg = result.message || "Upload failed";
-        setToast({ message: errorMsg, type: "error" });
+        addToast({ id: Date.now().toString(), title: errorMsg, type: "destructive" });
         throw new Error(errorMsg);
       }
       
@@ -286,7 +311,7 @@ export default function Home() {
 
       if (!s3UploadResponse.ok) {
         const errorMsg = "Upload to S3 failed";
-        setToast({ message: errorMsg, type: "error" });
+        addToast({ id: Date.now().toString(), title: errorMsg, type: "destructive" });
         throw new Error(errorMsg);
       }
 
@@ -301,7 +326,7 @@ export default function Home() {
       })
       if(!sucessVerification.ok){
         const errorMsg = "Upload verification failed";
-        setToast({message : errorMsg, type:"error"})
+        addToast({ id: Date.now().toString(), title: errorMsg, type: "destructive" });
         throw new Error(errorMsg);
       }
 
@@ -319,10 +344,10 @@ export default function Home() {
 
       setFiles((prev) => [newFile, ...prev])
       setSelectedFile(newFile)
-      setToast({ message: `File "${fileName}" uploaded to ${fullPath}`, type: "success" })
+      addToast({ id: Date.now().toString(), title: `File "${fileName}" uploaded to ${fullPath}`, type: "default" });
     } catch (error) {
       console.error(error);
-      setToast({ message: "Error uploading file", type: "error" })
+      addToast({ id: Date.now().toString(), title: "Error uploading file", type: "destructive" });
       throw error
     }
   }
@@ -332,7 +357,7 @@ export default function Home() {
       const fullPath = currentPath === "/" ? `/${folderName}` : `${currentPath}${folderName}`
       const folderExists = files.some((file) => file.path === fullPath && file.isFolder)
       if (folderExists) {
-        setToast({ message: "Folder already exists", type: "error" })
+        addToast({ id: Date.now().toString(), title: "Folder already exists", type: "destructive" });
         return
       }
 
@@ -354,9 +379,9 @@ export default function Home() {
       }
 
       setFiles((prev) => [newFolder, ...prev])
-      setToast({ message: `Folder "${folderName}" created at ${fullPath}`, type: "success" })
+      addToast({ id: Date.now().toString(), title: `Folder "${folderName}" created at ${fullPath}`, type: "default" });
     } catch (error) {
-      setToast({ message: "Error creating folder", type: "error" })
+      addToast({ id: Date.now().toString(), title: "Error creating folder", type: "destructive" });
       throw error
     }
   }
@@ -382,10 +407,10 @@ export default function Home() {
 
       const mockUrl = `https://share.example.com/${selectedFile.id}/${Date.now()}`
 
-      setToast({ message: `Sharing URL generated successfully! URL: ${mockUrl}`, type: "success" })
+      addToast({ id: Date.now().toString(), title: `Sharing URL generated successfully! URL: ${mockUrl}`, type: "default" });
       navigator.clipboard?.writeText(mockUrl)
     } catch (error) {
-      setToast({ message: "Error generating sharing URL", type: "error" })
+      addToast({ id: Date.now().toString(), title: "Error generating sharing URL", type: "destructive" });
       throw error
     }
   }
@@ -421,46 +446,51 @@ export default function Home() {
   }
 
    return (
-    <div className="min-h-screen bg-black text-white">
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
+    <div className="min-h-screen bg-black text-white relative overflow-x-hidden">
+      <AnimatedGrid />
       {/* Header */}
-      <header className="flex justify-between items-center p-4 bg-black border-b border-gray-800">
-        <div className="flex items-center space-x-2">
-          <File className="h-6 w-6 text-white" />
-          <h1 className="text-xl font-semibold text-white">FileShare</h1>
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-50 shadow-lg"
+      >
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <File className="w-8 h-8 text-cyan-400" />
+            <span className="text-2xl font-bold">FileShare</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setIsUploadModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 border-cyan-400 text-cyan-300 hover:bg-cyan-900/30 hover:text-white bg-transparent"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Upload</span>
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 border-cyan-400 text-cyan-300 hover:bg-cyan-900/30 hover:text-white bg-transparent"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
-          >
-            <Upload className="h-4 w-4" />
-            <span>Upload</span>
-          </Button>
-
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2 border-white text-white hover:bg-white hover:text-black bg-black"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </Button>
-        </div>
-      </header>
+      </motion.header>
 
       {/* Main Layout */}
-      <div ref={containerRef} className="flex h-[calc(100vh-73px)] relative">
+      <div className="container mx-auto py-10 flex gap-8 relative z-10">
         {/* Left Sidebar - File List */}
-        <div
-          ref={sidebarRef}
-          className="border-r border-gray-800 bg-black flex-shrink-0"
-          style={{ width: `${sidebarWidth}px` }}
+        <motion.div
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md"
         >
           <FileList
             files={getCurrentPathFiles()}
@@ -471,28 +501,26 @@ export default function Home() {
             onNavigateUp={handleNavigateUp}
             onBreadcrumbClick={handleBreadcrumbClick}
             isLoading={isLoading}
+            onRenameFile={handleRenameFileFromList}
+            onMoveFile={handleDropFileToFolder}
           />
-        </div>
-
-        {/* Resize Handle */}
-        <div
-          className="w-1 bg-gray-800 hover:bg-gray-600 cursor-col-resize flex-shrink-0 transition-colors duration-200 relative group"
-          onMouseDown={handleMouseDown}
-        >
-          <div className="absolute inset-y-0 left-0 w-1 bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-          <div className="absolute inset-y-0 -left-1 -right-1 w-3" />
-        </div>
+        </motion.div>
 
         {/* Right Content Area - Analytics */}
-        <div className="flex-1 bg-black min-w-0">
-          <div className="p-6">
+        <motion.div
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex-1 bg-black/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 p-8 min-w-0 flex flex-col justify-center"
+        >
+          <div className="">
             {selectedFile && !selectedFile.isFolder ? (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* File Info */}
                 <div className="text-center">
-                  <h2 className="text-xl font-semibold text-white mb-2">{selectedFile.name}</h2>
-                  <p className="text-sm text-gray-500 mb-4">Path: {selectedFile.path}</p>
-                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-400">
+                  <h2 className="text-2xl font-extrabold text-cyan-300 mb-2 drop-shadow">{selectedFile.name}</h2>
+                  <p className="text-sm text-cyan-200 mb-4">Path: {selectedFile.path}</p>
+                  <div className="flex items-center justify-center space-x-4 text-base text-cyan-200">
                     <span>Size: {(selectedFile.size / 1024).toFixed(2)} KB</span>
                     <span>•</span>
                     <span>Type: {selectedFile.type}</span>
@@ -503,11 +531,9 @@ export default function Home() {
 
                 {/* Generate URL Button */}
                 <div className="flex justify-center space-x-4">
-                  {" "}
-                  {/* Added space-x-4 for spacing */}
                   <Button
                     onClick={() => setIsGenerateUrlModalOpen(true)}
-                    className="bg-white text-black hover:bg-gray-200 font-medium px-6 py-2"
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-3 rounded-lg shadow-lg text-lg"
                   >
                     Generate Sharing URL
                   </Button>
@@ -515,31 +541,31 @@ export default function Home() {
                     onClick={() =>
                       window.open(`/view?id=${selectedFile.id}&name=${encodeURIComponent(selectedFile.name)}`, "_blank")
                     }
-                    className="bg-black text-white hover:bg-gray-900 font-medium px-6 py-2"
+                    className="bg-black/70 hover:bg-cyan-900/40 text-cyan-200 font-semibold px-8 py-3 rounded-lg shadow text-lg border border-cyan-700"
                   >
                     View File
                   </Button>
                 </div>
 
                 {/* Placeholder for Analytics */}
-                <div className="text-center text-gray-400 mt-8">
-                  <p>File analytics and additional details will be displayed here</p>
+                <div className="text-center text-cyan-300 mt-12">
+                  <p className="text-lg font-medium">File analytics and additional details will be displayed here</p>
                 </div>
               </div>
             ) : selectedFile && selectedFile.isFolder ? (
-              <div className="text-center text-gray-400">
-                <h2 className="text-xl font-semibold text-white mb-2">{selectedFile.name}</h2>
-                <p className="text-sm text-gray-500 mb-4">Path: {selectedFile.path}</p>
-                <p>Folder analytics will be displayed here</p>
+              <div className="text-center text-cyan-300">
+                <h2 className="text-2xl font-extrabold text-cyan-200 mb-2 drop-shadow">{selectedFile.name}</h2>
+                <p className="text-sm text-cyan-400 mb-4">Path: {selectedFile.path}</p>
+                <p className="text-lg font-medium">Folder analytics will be displayed here</p>
               </div>
             ) : (
-              <div className="text-center text-gray-400">
-                <p>Select a file from the sidebar to view details and generate sharing URLs</p>
-                <p className="text-sm text-gray-500 mt-2">Current path: {currentPath}</p>
+              <div className="text-center text-cyan-400">
+                <p className="text-lg font-medium">Select a file from the sidebar to view details and generate sharing URLs</p>
+                <p className="text-sm text-cyan-600 mt-2">Current path: {currentPath}</p>
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Upload Modal */}

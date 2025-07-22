@@ -1,8 +1,13 @@
-import { createRoot } from 'react-dom/client'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import Root from './App.tsx'
 import './index.css'
-import App from './App.tsx'
+import { ToastProvider } from './components/ui/toast.tsx'
 
-createRoot(document.getElementById('root')!).render(
-
-  <App />
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ToastProvider>
+      <Root />
+    </ToastProvider>
+  </React.StrictMode>,
 )
